@@ -1,0 +1,5 @@
+name: smolblog-wordpress
+recipe: wordpress
+config:
+  php: 8.4
+  webroot: web/
