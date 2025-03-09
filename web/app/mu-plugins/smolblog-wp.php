@@ -22,6 +22,7 @@
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Smolblog\Foundation\Service\Command\CommandBus;
 use Smolblog\Foundation\Value\Messages\Command;
+use Smolblog\WP\AdminPage\AdminPageRegistry;
 use Smolblog\WP\App;
 
 add_filter('admin_footer_text', fn() => '<span style="color: #9cd398; font-weight: bold">Smolblog 0.4.0</span>', 2000);
@@ -42,11 +43,46 @@ class Smolblog {
 		return self::$app;
 	}
 
-	public function dispatch(mixed $event): mixed {
-		return self::instance()->container->get(EventDispatcherInterface::class)->dispatch($event);
+	/**
+	 * Initilize any necessary hooks.
+	 *
+	 * @return void
+	 */
+	public static function init(): void {
+		add_action('admin_menu', fn() => self::get(AdminPageRegistry::class)->register());
 	}
 
-	public function execute(Command $command): mixed {
-		return self::instance()->container->get(CommandBus::class)->execute($command);
+	/**
+	 * Get a service from the ServiceRegistry (DI container).
+	 *
+	 * @template SRV
+	 * @param class-string<SRV> $service Fully-qualified class name to retrieve.
+	 * @return SRV Entry.
+	 */
+	public static function get(string $service): mixed {
+		return self::instance()->container->get($service);
+	}
+
+	/**
+	 * Dispatch an event object.
+	 * 
+	 * @template EVN
+	 * @param EVN $event Event to dispatch.
+	 * @return EVN $event after dispatch.
+	 */
+	public static function dispatch(mixed $event): mixed {
+		return self::get(EventDispatcherInterface::class)->dispatch($event);
+	}
+
+	/**
+	 * Execute a command object
+	 *
+	 * @param Command $command Command to execute.
+	 * @return mixed Return value of $command if any.
+	 */
+	public static function execute(Command $command): mixed {
+		return self::get(CommandBus::class)->execute($command);
 	}
 }
+
+Smolblog::init();
