@@ -27,7 +27,7 @@ class AdminPageRegistry implements Registry {
 					$pageConfig->menuTitle,
 					$pageConfig->wp_capability,
 					$pageConfig->key,
-					fn() => $this->get($pageConfig->key)->displayPage(),
+					fn() => $this->showPage($pageConfig->key, title: $pageConfig->pageTitle),
 					$pageConfig->position,
 				);
 				continue;
@@ -38,7 +38,7 @@ class AdminPageRegistry implements Registry {
 				$pageConfig->menuTitle,
 				$pageConfig->wp_capability,
 				$pageConfig->key,
-				fn() => $this->get($pageConfig->key)->displayPage(),
+				fn() => $this->showPage($pageConfig->key, title: $pageConfig->pageTitle),
 				$pageConfig->wp_icon,
 				$pageConfig->position,
 			);
@@ -47,5 +47,17 @@ class AdminPageRegistry implements Registry {
 
 	public function get(string $page): AdminPage {
 		return $this->getService($page);
+	}
+
+	public function showPage(string $key, ?string $title = null): void {
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			$this->get($key)->handleForm();
+		}
+
+		if (isset($title)) {
+			echo "<h1 class='wp-heading-inline'>{$title}</h1><hr class='wp-heading-end'>";
+		}
+
+		$this->get($key)->displayPage();
 	}
 }

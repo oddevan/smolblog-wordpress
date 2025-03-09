@@ -24,5 +24,5 @@ interface AdminPage extends ConfiguredRegisterable {
 	 *
 	 * @return void
 	 */
-	// public function handleForm(): void;
+	public function handleForm(): void;
 }
