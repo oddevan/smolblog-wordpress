@@ -2,6 +2,8 @@
 
 namespace Smolblog\WP\AdminPage;
 
+use Formr\Formr;
+
 class BasePage implements AdminPage {
 	public static function getConfiguration(): AdminPageConfiguration {
 		return new AdminPageConfiguration(
@@ -13,11 +15,27 @@ class BasePage implements AdminPage {
 		);
 	}
 
+	public function __construct(private Formr $form) {}
+
 	public function handleForm(): void {
-		
+		// get our form values and assign them to a variable
+    $data = $this->form->validate('Name, Email, Comments');
+
+    // show a success message if no errors
+    if($this->form->ok()) {
+        $this->form->success_message = "Thank you, {$data['name']}!";
+    }
 	}
 
 	public function displayPage(): void {
 		echo '<p>The future of blogging awaits! This ain\'t it, though.</p>';
+
+		$this->form->action = '';
+		$this->form->fastform([
+			'text' => 'name,Name,John Wick',
+			'email' => 'email,Email,johnwick@gunfu.com',
+			'textarea' => 'comments,Comments'
+		]);
+		
 	}
 }

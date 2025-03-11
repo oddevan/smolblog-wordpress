@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "86bd444500bf4485e386f5926c509e07",
+    "content-hash": "5d95426e2178a0bb45445d5397dac0b7",
     "packages": [
         {
             "name": "brick/math",
@@ -65,6 +65,66 @@
                 }
             ],
             "time": "2025-02-28T13:11:00+00:00"
+        },
+        {
+            "name": "bueltge/wordpress-admin-style",
+            "version": "1.6.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/bueltge/wordpress-admin-style.git",
+                "reference": "4569ff367abf584fdd1376b0edc88e83e1b6e24a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/bueltge/wordpress-admin-style/zipball/4569ff367abf584fdd1376b0edc88e83e1b6e24a",
+                "reference": "4569ff367abf584fdd1376b0edc88e83e1b6e24a",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">5.2.4"
+            },
+            "require-dev": {
+                "dealerdirect/phpcodesniffer-composer-installer": "*",
+                "phpcompatibility/phpcompatibility-wp": "^2.1",
+                "squizlabs/php_codesniffer": "^3",
+                "wp-coding-standards/wpcs": "*"
+            },
+            "type": "wordpress-plugin",
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Inpsyde GmbH",
+                    "email": "info@inpsyde.com",
+                    "homepage": "https://inpsyde.com",
+                    "role": "Company"
+                },
+                {
+                    "name": "Frank Bültge",
+                    "email": "frank@bueltge.de",
+                    "homepage": "https://bueltge.de",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Shows the WordPress admin styles on one page to help you to develop WordPress compliant",
+            "homepage": "https://github.com/bueltge/wordpress-admin-style",
+            "support": {
+                "issues": "https://github.com/bueltge/wordpress-admin-style/issues",
+                "source": "https://github.com/bueltge/wordpress-admin-style/tree/1.6.1"
+            },
+            "funding": [
+                {
+                    "url": "https://bueltge.de/impressum/#hinweis",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/bueltge",
+                    "type": "github"
+                }
+            ],
+            "time": "2023-12-22T13:05:20+00:00"
         },
         {
             "name": "composer/installers",
@@ -607,6 +667,54 @@
                 "source": "https://github.com/php-fig/event-dispatcher-util/tree/1.3.1"
             },
             "time": "2022-03-30T18:25:35+00:00"
+        },
+        {
+            "name": "formr/formr",
+            "version": "1.5.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/formr/formr.git",
+                "reference": "ba51f8a2ce2db80b4bfc45d80a3f153a323a75ae"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/formr/formr/zipball/ba51f8a2ce2db80b4bfc45d80a3f153a323a75ae",
+                "reference": "ba51f8a2ce2db80b4bfc45d80a3f153a323a75ae",
+                "shasum": ""
+            },
+            "require": {
+                "ext-mbstring": "*",
+                "php": ">=8.1"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "class.formr.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-only"
+            ],
+            "authors": [
+                {
+                    "name": "Tim Gavin",
+                    "homepage": "https://formr.github.io",
+                    "role": "Original Author"
+                }
+            ],
+            "description": "Formr is a PHP library which helps you build and validate forms quickly, painlessly, and without all the messy overhead.",
+            "support": {
+                "issues": "https://github.com/formr/formr/issues",
+                "source": "https://github.com/formr/formr/tree/1.5.2"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/timgavin",
+                    "type": "github"
+                }
+            ],
+            "time": "2024-08-12T16:43:56+00:00"
         },
         {
             "name": "graham-campbell/result-type",

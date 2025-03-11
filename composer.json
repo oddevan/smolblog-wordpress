@@ -51,7 +51,9 @@
     "smolblog/core-data-sql": "^0.4.0",
     "smolblog/framework-infrastructure": "^0.4.0",
     "wpackagist-plugin/disable-comments": "^2.4",
-    "webdevstudios/wds-required-plugins": "^1.4"
+    "webdevstudios/wds-required-plugins": "^1.4",
+    "formr/formr": "^1.5",
+    "bueltge/wordpress-admin-style": "^1.6"
   },
   "require-dev": {
     "roave/security-advisories": "dev-latest",

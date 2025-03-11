@@ -2,6 +2,7 @@
 
 namespace Smolblog\WP\AdminPage;
 
+use Formr\Formr;
 use Psr\Container\ContainerInterface;
 use Smolblog\Foundation\Service\Registry\Registry;
 use Smolblog\Foundation\Service\Registry\RegistryKit;
@@ -13,7 +14,7 @@ class AdminPageRegistry implements Registry {
 		return AdminPage::class;
 	}
 
-	public function __construct(ContainerInterface $container) {
+	public function __construct(ContainerInterface $container, private Formr $form) {
 		$this->container = $container;
 	}
 
@@ -50,13 +51,15 @@ class AdminPageRegistry implements Registry {
 	}
 
 	public function showPage(string $key, ?string $title = null): void {
-		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+		if ($this->form->submitted()) {
 			$this->get($key)->handleForm();
 		}
 
 		if (isset($title)) {
 			echo "<h1 class='wp-heading-inline'>{$title}</h1><hr class='wp-heading-end'>";
 		}
+
+		$this->form->messages();
 
 		$this->get($key)->displayPage();
 	}
