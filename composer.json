@@ -16,6 +16,13 @@
   ],
   "repositories": [
     {
+      "type": "path",
+      "url": "../smolblog",
+      "options": {
+        "symlink": false
+      }
+    },
+    {
       "type": "composer",
       "url": "https://wpackagist.org",
       "only": ["wpackagist-plugin/*", "wpackagist-theme/*"]
@@ -23,7 +30,9 @@
     {
       "type": "composer",
       "url": "https://composer.advancedcustomfields.com"
-    },
+    }
+  ],
+  "repositories-disabled": [
     {
       "type": "composer",
       "url": "https://packages.smolblog.org"
@@ -47,9 +56,7 @@
     "wpackagist-theme/twentytwentyfive": "^1.0",
     "roots/multisite-url-fixer": "^1.1",
     "wpengine/advanced-custom-fields": "^6.3",
-    "smolblog/core": "^0.4.0",
-    "smolblog/core-data-sql": "^0.4.0",
-    "smolblog/framework-infrastructure": "^0.4.0",
+    "smolblog/smolblog": "*",
     "wpackagist-plugin/disable-comments": "^2.4",
     "webdevstudios/wds-required-plugins": "^1.4",
     "formr/formr": "^1.5",

@@ -5,12 +5,14 @@ namespace Smolblog\WP;
 use Psr\Container\ContainerInterface;
 use Roots\WPConfig\Config;
 use Smolblog\Core\Model as CoreModel;
+use Smolblog\Core\Site\Commands\CreateSite;
 use Smolblog\CoreDataSql\DatabaseManager;
 use Smolblog\CoreDataSql\Model as CoreDataSqlModel;
 use Smolblog\Foundation\Service\KeypairGenerator;
 use Smolblog\Infrastructure\AppKit;
 use Smolblog\Infrastructure\Model as InfrastructureModel;
 use Smolblog\Infrastructure\Registries\ServiceRegistry;
+use Smolblog\WP\Adapters\UserAdapter;
 use Smolblog\WP\AdminPage\AdminPageRegistry;
 use Smolblog\WP\Model as WPModel;
 
@@ -53,6 +55,14 @@ final class App {
 			configuration: $dependencyMap,
 			supplements: $this->buildSupplementsForRegistries(array_keys($dependencyMap)),
 		);
+
+		if (!is_multisite() && get_option('smolblog_site_obj') === false) {
+			$command = new CreateSite(
+				userId: $this->container->get(UserAdapter::class)->userIdFromWordPressId(1),
+				key: 'smolblog',
+				displayName: get_bloginfo('name'),
+			);
+		}
 	}
 
 	private function getUnmetDependencies($dependencyMap, $skipContainers = false): ?array {
