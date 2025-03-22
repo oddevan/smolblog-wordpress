@@ -3,6 +3,8 @@
 namespace Smolblog\WP\AdminPage;
 
 use Formr\Formr;
+use Smolblog\Core\Content\Services\ContentExtensionRegistry;
+use Smolblog\Core\Content\Services\ContentTypeRegistry;
 
 class BasePage implements AdminPage {
 	public static function getConfiguration(): AdminPageConfiguration {
@@ -15,27 +17,55 @@ class BasePage implements AdminPage {
 		);
 	}
 
-	public function __construct(private Formr $form) {}
+	private array $formData = [];
+
+	public function __construct(
+		private Formr $form,
+		private ContentTypeRegistry $contentTypes,
+		private ContentExtensionRegistry $contentExtensions,
+	) {}
 
 	public function handleForm(): void {
 		// get our form values and assign them to a variable
-    $data = $this->form->validate('Name, Email, Comments');
+    $data = $this->form->fastpost([
+			'body_text' => ['Note','required|max[300]'],
+			'extensions_tags_tags' => ['Tags'],
+		]);
+
+		$this->formData = [
+			'body' => ['text' => $data['body_text']],
+			'extensions' => ['tags' => array_map(fn($str) => trim($str), explode(',', $data['extensions_tags_tags']))],
+		];
 
     // show a success message if no errors
     if($this->form->ok()) {
-        $this->form->success_message = "Thank you, {$data['name']}!";
+        $this->form->success_message = "Validation passed.";
     }
 	}
 
 	public function displayPage(): void {
 		echo '<p>The future of blogging awaits! This ain\'t it, though.</p>';
 
-		$this->form->action = '';
+		// $this->form->action = '';
 		$this->form->fastform([
-			'text' => 'name,Name,John Wick',
-			'email' => 'email,Email,johnwick@gunfu.com',
-			'textarea' => 'comments,Comments'
+			'textarea' => 'body_text,Note',
+			'text' => 'extensions_tags_tags,Tags',
 		]);
+?>
+
+<pre><code>
+<?php print_r($this->formData); ?>
+</code></pre>
+
+<h2>Available content types</h2>
+
+<ul>
+	<?php foreach ($this->contentTypes->availableContentTypes() as $key => $name) : ?>
+		<li><?= $name ?> (<code><?= $key ?></code>)</li>
+	<?php endforeach; ?>
+</ul>
+
+<?php
 		
 	}
 }

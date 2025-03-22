@@ -56,10 +56,11 @@ class AdminPageRegistry implements Registry {
 		}
 
 		if (isset($title)) {
-			echo "<h1 class='wp-heading-inline'>{$title}</h1><hr class='wp-heading-end'>";
+			echo "<h1 class='wp-heading-inline'>{$title}</h1>\n<hr class='wp-heading-end'>\n";
 		}
 
 		$this->form->messages();
+		$this->form->action = $_SERVER['REQUEST_URI'];
 
 		$this->get($key)->displayPage();
 	}
