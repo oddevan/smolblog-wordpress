@@ -3,28 +3,19 @@
 namespace Smolblog\WP;
 
 use Smolblog\Foundation\Value\Fields\{Identifier, RandomIdentifier, Url};
+use Smolblog\WP\Adapters\UserAdapter;
 
 class WordPressEnvironment {
+	public function __construct(private UserAdapter $users) {
+	}
+
 	public function getAdminUrl(string $key): Url {
 		return new Url(get_admin_url(null, 'admin.php?page=' . $key));
 	}
 
 	public function getUserId(?int $wordPressId = null): Identifier {
 		$dbId = $wordPressId ?? get_current_user_id();
-		if ($dbId < 1) {
-			return Identifier::nil();
-		}
-
-		$meta_value = get_user_meta( $dbId, 'smolblog_user_id', true );
-
-		if (empty($meta_value)) {
-			$new_id = new RandomIdentifier();
-			update_user_meta($dbId, 'smolblog_user_id', $new_id->toString());
-
-			return $new_id;
-		}
-
-		return Identifier::fromString($meta_value);
+		return $this->users->userIdFromWordPressId($dbId);
 	}
 
 	public function getSiteId(?int $wordPressId = null): Identifier {

@@ -4,7 +4,6 @@ namespace Smolblog\WP;
 
 use Formr\Formr;
 use Smolblog\Core;
-use Smolblog\Core\Connection\Data\AuthRequestStateRepo;
 use Smolblog\Core\Permissions\{GlobalPermissionsService, SitePermissionsService};
 use Smolblog\CoreDataSql\{ChannelProjection, ConnectionProjection, ContentProjection, MediaProjection};
 use Smolblog\Foundation\DomainModel;
@@ -16,16 +15,17 @@ class Model extends DomainModel {
 		AdminPage\BasePage::class,
 		Adapters\AuthRequestStateAdapter::class,
 		Adapters\PermissionsAdapter::class,
+		Adapters\UserAdapter::class,
 		WordPressEnvironment::class,
 	];
 
 	const SERVICES = [
 		Core\Channel\Data\ChannelRepo::class => ChannelProjection::class,
+		Core\Connection\Data\AuthRequestStateRepo::class => Adapters\AuthRequestStateAdapter::class,
 		Core\Connection\Data\ConnectionRepo::class => ConnectionProjection::class,
 		Core\Content\Data\ContentRepo::class => ContentProjection::class,
 		Core\Content\Data\ContentStateManager::class => ContentProjection::class,
 		Core\Media\Data\MediaRepo::class => MediaProjection::class,
-		AuthRequestStateRepo::class => Adapters\AuthRequestStateAdapter::class,
 		SitePermissionsService::class => Adapters\PermissionsAdapter::class,
 		GlobalPermissionsService::class => Adapters\PermissionsAdapter::class,
 	];
