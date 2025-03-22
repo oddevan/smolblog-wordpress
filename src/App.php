@@ -2,9 +2,12 @@
 
 namespace Smolblog\WP;
 
+use Psr\Container\ContainerInterface;
+use Roots\WPConfig\Config;
 use Smolblog\Core\Model as CoreModel;
 use Smolblog\CoreDataSql\DatabaseManager;
 use Smolblog\CoreDataSql\Model as CoreDataSqlModel;
+use Smolblog\Foundation\Service\KeypairGenerator;
 use Smolblog\Infrastructure\AppKit;
 use Smolblog\Infrastructure\Model as InfrastructureModel;
 use Smolblog\Infrastructure\Registries\ServiceRegistry;
@@ -23,18 +26,68 @@ final class App {
 			InfrastructureModel::class,
 			WPModel::class,
 		]);
+		$dependencyMap[KeypairGenerator::class] = [];
 
 		// $dependencyMap[DatabaseManager::class] = ['props' => fn() => [
-		// 	'dbname' => 'mydb',
-		// 	'user' => 'user',
-		// 	'password' => 'secret',
-		// 	'host' => 'localhost',
+		// 	'dbname' => Config::get('DB_NAME'),
+		// 	'user' => Config::get('DB_USER'),
+		// 	'password' => Config::get('DB_PASSWORD'),
+		// 	'host' => Config::get('DB_HOST'),
 		// 	'driver' => 'pdo_mysql',
 		// ]];
+
+		$needs = $this->getUnmetDependencies($dependencyMap);
+		if ($needs) {
+			$html = '<h2>Configuration error: missing service implementations</h2>';
+			$html .= '<p>The following interfaces are required by services in the ServiceRegistry (dependency injection container).</p>';
+			foreach ($needs as $req => $allNeededBy) {
+				$html .= "<h3>{$req}</h3><p>Required by:</p><ul><li>";
+				$html .= implode('</li><li>', $allNeededBy);
+				$html .= '</li></ul>';
+			}
+
+			wp_die($html);
+		}
 
 		$this->container = new ServiceRegistry(
 			configuration: $dependencyMap,
 			supplements: $this->buildSupplementsForRegistries(array_keys($dependencyMap)),
 		);
+	}
+
+	private function getUnmetDependencies($dependencyMap, $skipContainers = false): ?array {
+		$availableServices = array_keys($dependencyMap);
+		if (!$skipContainers) {
+			$availableServices[] = ServiceRegistry::class;
+			$availableServices[] = ContainerInterface::class;
+		}
+
+		$prelim = array_filter(
+			array_map(fn($deps) =>
+				!is_array($deps) ? null : array_filter(
+					$deps,
+					fn($dep) => is_string($dep) && !in_array($dep, $availableServices)
+				),
+				$dependencyMap
+			),
+			fn($map) => !empty($map),
+		);
+
+		if (empty($prelim)) {
+			return null;
+		}
+
+		$results = [];
+		foreach ($prelim as $reqBy => $needs) {
+			if (!is_array($needs)) {
+				continue;
+			}
+			foreach($needs as $missing) {
+				$results[$missing] ??= [];
+				$results[$missing][] = $reqBy;
+			}
+		}
+
+		return $results;
 	}
 }
