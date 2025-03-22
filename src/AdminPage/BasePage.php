@@ -3,8 +3,14 @@
 namespace Smolblog\WP\AdminPage;
 
 use Formr\Formr;
+use Smolblog;
+use Smolblog\Core\Content\Commands\CreateContent;
+use Smolblog\Core\Content\Extensions\Tags\Tags;
 use Smolblog\Core\Content\Services\ContentExtensionRegistry;
 use Smolblog\Core\Content\Services\ContentTypeRegistry;
+use Smolblog\Core\Content\Types\Note\Note;
+use Smolblog\Foundation\Service\Command\CommandBus;
+use Smolblog\WP\WordPressEnvironment;
 
 class BasePage implements AdminPage {
 	public static function getConfiguration(): AdminPageConfiguration {
@@ -21,8 +27,8 @@ class BasePage implements AdminPage {
 
 	public function __construct(
 		private Formr $form,
-		private ContentTypeRegistry $contentTypes,
-		private ContentExtensionRegistry $contentExtensions,
+		private WordPressEnvironment $env,
+		private CommandBus $cmd,
 	) {}
 
 	public function handleForm(): void {
@@ -33,9 +39,18 @@ class BasePage implements AdminPage {
 		]);
 
 		$this->formData = [
-			'body' => ['text' => $data['body_text']],
-			'extensions' => ['tags' => array_map(fn($str) => trim($str), explode(',', $data['extensions_tags_tags']))],
+			'userId' => $this->env->getUserId()->toString(),
+			'body' => ['text' => $data['body_text'], 'type' => Note::class],
+			'siteId' => $this->env->getSiteId()->toString(),
+			'extensions' => ['tags' => [
+					'type' => Tags::class,
+					'tags' => array_map(fn($str) => trim($str), explode(',', $data['extensions_tags_tags']))
+				]
+			],
 		];
+
+		$command = CreateContent::deserializeValue($this->formData);
+		$this->cmd->execute($command);
 
     // show a success message if no errors
     if($this->form->ok()) {
@@ -53,19 +68,11 @@ class BasePage implements AdminPage {
 		]);
 ?>
 
-<pre><code>
-<?php print_r($this->formData); ?>
+<pre><code><?php print_r($this->formData); ?>
+
+<?php print_r([]); ?>
 </code></pre>
 
-<h2>Available content types</h2>
-
-<ul>
-	<?php foreach ($this->contentTypes->availableContentTypes() as $key => $name) : ?>
-		<li><?= $name ?> (<code><?= $key ?></code>)</li>
-	<?php endforeach; ?>
-</ul>
-
 <?php
-		
 	}
 }
