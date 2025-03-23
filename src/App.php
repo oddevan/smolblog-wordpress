@@ -6,9 +6,11 @@ use Psr\Container\ContainerInterface;
 use Roots\WPConfig\Config;
 use Smolblog\Core\Model as CoreModel;
 use Smolblog\Core\Site\Commands\CreateSite;
+use Smolblog\Core\Site\Entities\Site;
 use Smolblog\CoreDataSql\DatabaseManager;
 use Smolblog\CoreDataSql\Model as CoreDataSqlModel;
 use Smolblog\Foundation\Service\KeypairGenerator;
+use Smolblog\Foundation\Value\Fields\RandomIdentifier;
 use Smolblog\Infrastructure\AppKit;
 use Smolblog\Infrastructure\Model as InfrastructureModel;
 use Smolblog\Infrastructure\Registries\ServiceRegistry;
@@ -57,11 +59,15 @@ final class App {
 		);
 
 		if (!is_multisite() && get_option('smolblog_site_obj') === false) {
-			$command = new CreateSite(
-				userId: $this->container->get(UserAdapter::class)->userIdFromWordPressId(1),
+			$siteObj = new Site(
+				id: new RandomIdentifier(),
 				key: 'smolblog',
 				displayName: get_bloginfo('name'),
+				userId: $this->container->get(UserAdapter::class)->userIdFromWordPressId(1),
+				keypair: $this->container->get(KeypairGenerator::class)->generate(),
 			);
+
+			add_option('smolblog_site_obj', $siteObj->toJson());
 		}
 	}
 

@@ -15,6 +15,7 @@ class Model extends DomainModel {
 		AdminPage\BasePage::class,
 		Adapters\AuthRequestStateAdapter::class,
 		Adapters\PermissionsAdapter::class,
+		Adapters\SiteAdapter::class,
 		Adapters\UserAdapter::class,
 		WordPressEnvironment::class,
 	];
@@ -26,6 +27,7 @@ class Model extends DomainModel {
 		Core\Content\Data\ContentRepo::class => ContentProjection::class,
 		Core\Content\Data\ContentStateManager::class => ContentProjection::class,
 		Core\Media\Data\MediaRepo::class => MediaProjection::class,
+		Core\Site\Data\SiteRepo::class => Adapters\SiteAdapter::class,
 		SitePermissionsService::class => Adapters\PermissionsAdapter::class,
 		GlobalPermissionsService::class => Adapters\PermissionsAdapter::class,
 	];

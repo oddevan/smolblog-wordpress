@@ -6,7 +6,12 @@ use Smolblog\Core\Permissions\GlobalPermissionsService;
 use Smolblog\Core\Permissions\SitePermissionsService;
 use Smolblog\Foundation\Value\Fields\Identifier;
 
+/**
+ * For single-site use. Multisite coming later.
+ */
 class PermissionsAdapter implements SitePermissionsService, GlobalPermissionsService {
+	public function __construct(private UserAdapter $users, private SiteAdapter $sites) {}
+
 	/**
 	 * Can the given user create content on the given site?
 	 *
@@ -14,7 +19,10 @@ class PermissionsAdapter implements SitePermissionsService, GlobalPermissionsSer
 	 * @param Identifier $siteId Site to check.
 	 * @return boolean
 	 */
-	public function canCreateContent(Identifier $userId, Identifier $siteId): bool { return true; }
+	public function canCreateContent(Identifier $userId, Identifier $siteId): bool {
+		$wpId = $this->wordPressUserOrFalse($userId, $siteId);
+		return $wpId !== false && user_can($wpId, 'edit_posts');
+	}
 
 	/**
 	 * Can the given user edit all content on the given site (not just their own)?
@@ -23,7 +31,10 @@ class PermissionsAdapter implements SitePermissionsService, GlobalPermissionsSer
 	 * @param Identifier $siteId Site to check.
 	 * @return boolean
 	 */
-	public function canEditAllContent(Identifier $userId, Identifier $siteId): bool { return true; }
+	public function canEditAllContent(Identifier $userId, Identifier $siteId): bool {
+		$wpId = $this->wordPressUserOrFalse($userId, $siteId);
+		return $wpId !== false && user_can($wpId, 'edit_others_posts');
+	}
 
 	/**
 	 * Can the given user add and remove channels for the given site?
@@ -32,7 +43,10 @@ class PermissionsAdapter implements SitePermissionsService, GlobalPermissionsSer
 	 * @param Identifier $siteId Site to check.
 	 * @return boolean
 	 */
-	public function canManageChannels(Identifier $userId, Identifier $siteId): bool { return true; }
+	public function canManageChannels(Identifier $userId, Identifier $siteId): bool {
+		$wpId = $this->wordPressUserOrFalse($userId, $siteId);
+		return $wpId !== false && user_can($wpId, 'manage_options');
+	}
 
 	/**
 	 * Can the given user upload media to the given site?
@@ -41,7 +55,10 @@ class PermissionsAdapter implements SitePermissionsService, GlobalPermissionsSer
 	 * @param Identifier $siteId Site to check.
 	 * @return boolean
 	 */
-	public function canUploadMedia(Identifier $userId, Identifier $siteId): bool { return true; }
+	public function canUploadMedia(Identifier $userId, Identifier $siteId): bool {
+		$wpId = $this->wordPressUserOrFalse($userId, $siteId);
+		return $wpId !== false && user_can($wpId, 'upload_files');
+	}
 
 	/**
 	 * Can the given user edit all media on the given site (not just their own)?
@@ -50,7 +67,10 @@ class PermissionsAdapter implements SitePermissionsService, GlobalPermissionsSer
 	 * @param Identifier $siteId Site to check.
 	 * @return boolean
 	 */
-	public function canEditAllMedia(Identifier $userId, Identifier $siteId): bool { return true; }
+	public function canEditAllMedia(Identifier $userId, Identifier $siteId): bool {
+		$wpId = $this->wordPressUserOrFalse($userId, $siteId);
+		return $wpId !== false && user_can($wpId, 'upload_files');
+	}
 
 	/**
 	 * Can the given user push content to channels?
@@ -59,7 +79,10 @@ class PermissionsAdapter implements SitePermissionsService, GlobalPermissionsSer
 	 * @param Identifier $siteId Site to check.
 	 * @return boolean
 	 */
-	public function canPushContent(Identifier $userId, Identifier $siteId): bool { return true; }
+	public function canPushContent(Identifier $userId, Identifier $siteId): bool {
+		$wpId = $this->wordPressUserOrFalse($userId, $siteId);
+		return $wpId !== false && user_can($wpId, 'publish_posts');
+	}
 
 	/**
 	 * Can the given user set user permissions?
@@ -68,7 +91,10 @@ class PermissionsAdapter implements SitePermissionsService, GlobalPermissionsSer
 	 * @param Identifier $siteId Site to check.
 	 * @return boolean
 	 */
-	public function canManagePermissions(Identifier $userId, Identifier $siteId): bool { return true; }
+	public function canManagePermissions(Identifier $userId, Identifier $siteId): bool {
+		$wpId = $this->wordPressUserOrFalse($userId, $siteId);
+		return $wpId !== false && user_can($wpId, 'promote_users');
+	}
 
 	/**
 	 * Can the given user change site settings?
@@ -77,13 +103,23 @@ class PermissionsAdapter implements SitePermissionsService, GlobalPermissionsSer
 	 * @param Identifier $siteId Site to check.
 	 * @return boolean
 	 */
-	public function canManageSettings(Identifier $userId, Identifier $siteId): bool { return true; }
+	public function canManageSettings(Identifier $userId, Identifier $siteId): bool {
+		$wpId = $this->wordPressUserOrFalse($userId, $siteId);
+		return $wpId !== false && user_can($wpId, 'manage_options');
+	}
 
 	/**
 	 * Can the given user create a new site?
 	 *
 	 * @param Identifier $userId User to check.
-	 * @return boolean
+	 * @return false Creating new sites is not supported in single-site mode.
 	 */
-	public function canCreateSite(Identifier $userId): bool { return true; }
+	public function canCreateSite(Identifier $userId): bool { return false; }
+
+	private function wordPressUserOrFalse(Identifier $userId, Identifier $siteId): int|false {
+		if (!$this->sites->hasSiteWithId($siteId)) {
+			return false;
+		}
+		return $this->users->wordPressIdFromUserId($userId);
+	}
 }
