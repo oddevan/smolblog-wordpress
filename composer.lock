@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "25b32d8a0e21b8275f9bc3627b71ff04",
+    "content-hash": "6a886a52ac77446d972bbed3ba6d6bad",
     "packages": [
         {
             "name": "brick/math",
@@ -4765,6 +4765,24 @@
             },
             "type": "wordpress-plugin",
             "homepage": "https://wordpress.org/plugins/disable-comments/"
+        },
+        {
+            "name": "wpackagist-plugin/pexlechris-adminer",
+            "version": "3.1.1",
+            "source": {
+                "type": "svn",
+                "url": "https://plugins.svn.wordpress.org/pexlechris-adminer/",
+                "reference": "tags/3.1.1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://downloads.wordpress.org/plugin/pexlechris-adminer.3.1.1.zip"
+            },
+            "require": {
+                "composer/installers": "^1.0 || ^2.0"
+            },
+            "type": "wordpress-plugin",
+            "homepage": "https://wordpress.org/plugins/pexlechris-adminer/"
         },
         {
             "name": "wpackagist-theme/twentytwentyfive",

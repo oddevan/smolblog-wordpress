@@ -60,7 +60,8 @@
     "wpackagist-plugin/disable-comments": "^2.4",
     "webdevstudios/wds-required-plugins": "^1.4",
     "formr/formr": "^1.5",
-    "bueltge/wordpress-admin-style": "^1.6"
+    "bueltge/wordpress-admin-style": "^1.6",
+    "wpackagist-plugin/pexlechris-adminer": "^3.1"
   },
   "require-dev": {
     "roave/security-advisories": "dev-latest",
