@@ -7,7 +7,7 @@ use Roots\WPConfig\Config;
 use Smolblog\Core\Model as CoreModel;
 use Smolblog\Core\Site\Commands\CreateSite;
 use Smolblog\Core\Site\Entities\Site;
-use Smolblog\CoreDataSql\DatabaseManager;
+use Smolblog\CoreDataSql\DatabaseEnvironment;
 use Smolblog\CoreDataSql\Model as CoreDataSqlModel;
 use Smolblog\Foundation\Service\KeypairGenerator;
 use Smolblog\Foundation\Value\Fields\RandomIdentifier;
@@ -24,6 +24,8 @@ final class App {
 	public readonly ServiceRegistry $container;
 
 	public function __construct()	{
+		global $wpdb;
+
 		$dependencyMap = $this->buildDependencyMap([
 			CoreModel::class,
 			CoreDataSqlModel::class,
@@ -32,13 +34,16 @@ final class App {
 		]);
 		$dependencyMap[KeypairGenerator::class] = [];
 
-		// $dependencyMap[DatabaseManager::class] = ['props' => fn() => [
-		// 	'dbname' => Config::get('DB_NAME'),
-		// 	'user' => Config::get('DB_USER'),
-		// 	'password' => Config::get('DB_PASSWORD'),
-		// 	'host' => Config::get('DB_HOST'),
-		// 	'driver' => 'pdo_mysql',
-		// ]];
+		$dependencyMap[DatabaseEnvironment::class] = [
+			'props' => fn() => [
+				'dbname' => Config::get('DB_NAME'),
+				'user' => Config::get('DB_USER'),
+				'password' => Config::get('DB_PASSWORD'),
+				'host' => Config::get('DB_HOST'),
+				'driver' => 'pdo_mysql',
+			],
+			'tablePrefix' => fn() => $wpdb->base_prefix . 'smolblog_',
+		];
 
 		$needs = $this->getUnmetDependencies($dependencyMap);
 		if ($needs) {
