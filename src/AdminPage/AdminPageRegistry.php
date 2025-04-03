@@ -2,8 +2,10 @@
 
 namespace Smolblog\WP\AdminPage;
 
+use Exception;
 use Formr\Formr;
 use Psr\Container\ContainerInterface;
+use Smolblog\Foundation\Exceptions\CommandNotAuthorized;
 use Smolblog\Foundation\Service\Registry\Registry;
 use Smolblog\Foundation\Service\Registry\RegistryKit;
 
@@ -52,7 +54,14 @@ class AdminPageRegistry implements Registry {
 
 	public function showPage(string $key, ?string $title = null): void {
 		if ($this->form->submitted()) {
-			$this->get($key)->handleForm();
+			try {
+				$this->get($key)->handleForm();
+			} catch (Exception $e) {
+				$this->form->error_message = match (get_class($e)) {
+					CommandNotAuthorized::class => 'You are not authorized to do that.',
+					default => $e->getMessage(),
+				};
+			}
 		}
 
 		if (isset($title)) {

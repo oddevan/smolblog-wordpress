@@ -118,6 +118,7 @@ class PermissionsAdapter implements SitePermissionsService, GlobalPermissionsSer
 
 	private function wordPressUserOrFalse(Identifier $userId, Identifier $siteId): int|false {
 		if (!$this->sites->hasSiteWithId($siteId)) {
+			// echo "No WP site for id $siteId";
 			return false;
 		}
 		return $this->users->wordPressIdFromUserId($userId);

@@ -3,10 +3,11 @@
 namespace Smolblog\WP;
 
 use Smolblog\Foundation\Value\Fields\{Identifier, RandomIdentifier, Url};
+use Smolblog\WP\Adapters\SiteAdapter;
 use Smolblog\WP\Adapters\UserAdapter;
 
 class WordPressEnvironment {
-	public function __construct(private UserAdapter $users) {
+	public function __construct(private UserAdapter $users, private SiteAdapter $sites) {
 	}
 
 	public function getAdminUrl(string $key): Url {
@@ -26,16 +27,9 @@ class WordPressEnvironment {
 	}
 
 	private function getSiteIdSingle(): Identifier {
-		$optionValue = get_option('smolblog_site_id');
-		if ($optionValue === false) {
-			// If the site does not have an ID, give it one.
-			$new_id = new RandomIdentifier();
-			add_option('smolblog_site_id', $new_id->toString());
+		$site = $this->sites->currentSite();
 
-			return $new_id;
-		}
-
-		return Identifier::fromString($optionValue);
+		return $site->id;
 	}
 
 	private function getSiteIdMultisite(?int $wordPressId = null): Identifier {
