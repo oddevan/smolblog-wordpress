@@ -9,6 +9,7 @@ use Smolblog\Core\Content\Extensions\Tags\Tags;
 use Smolblog\Core\Content\Services\ContentExtensionRegistry;
 use Smolblog\Core\Content\Services\ContentTypeRegistry;
 use Smolblog\Core\Content\Types\Note\Note;
+use Smolblog\CoreDataSql\ContentProjection;
 use Smolblog\Foundation\Service\Command\CommandBus;
 use Smolblog\WP\WordPressEnvironment;
 
@@ -29,6 +30,7 @@ class BasePage implements AdminPage {
 		private Formr $form,
 		private WordPressEnvironment $env,
 		private CommandBus $cmd,
+		private ContentProjection $content,
 	) {}
 
 	public function handleForm(): void {
@@ -66,13 +68,20 @@ class BasePage implements AdminPage {
 			'textarea' => 'body_text,Note',
 			'text' => 'extensions_tags_tags,Tags',
 		]);
-?>
 
-<pre><code><?php print_r($this->formData); ?>
+		echo '<hr>';
+		$notes = $this->content->contentList();
+		?>
 
-<?php print_r([]); ?>
-</code></pre>
+		<h3>Latest Notes</h3>
 
-<?php
+		<ol>
+			<?php foreach ($notes as $note) : ?>
+				<li>
+					<p><?= $note->body->text ?></p>
+					<p>Posted <?= $note->publishTimestamp?->object?->format('F n, Y') ?? 'never' ?></p>
+			<?php endforeach; ?>
+		</ol>
+		<?php
 	}
 }
