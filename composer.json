@@ -61,7 +61,7 @@
     "webdevstudios/wds-required-plugins": "^1.4",
     "formr/formr": "^1.5",
     "bueltge/wordpress-admin-style": "^1.6",
-    "wpackagist-plugin/pexlechris-adminer": "^3.1"
+    "wpackagist-plugin/pexlechris-adminer": "^4.0"
   },
   "require-dev": {
     "roave/security-advisories": "dev-latest",
