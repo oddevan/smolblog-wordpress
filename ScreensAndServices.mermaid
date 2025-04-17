@@ -1,0 +1,66 @@
+sequenceDiagram
+	actor User
+	box Screens
+		participant contentList as Content List
+		participant contentForm as Content Form
+	end
+	box Services
+		participant CommandBus
+		participant ContentDataService
+	end
+
+	Note right of User: Add Content
+	User->>+contentForm: Navigate
+	contentForm->ContentTypeRegistry: getContentTypes
+	contentForm->ContentExtensionRegistry: getContentExtensions
+	contentForm->>-User: Display empty form
+	User->>+contentForm: Submit
+	contentForm-->+CommandBus: CreateContent
+	CommandBus-->-contentForm: Created content ID
+	contentForm->>User: Display success; redirect
+
+	Note right of User: Edit Content
+	User->>+contentList: Navigate
+	contentList->ContentDataService: contentList(userId, siteId)
+	contentList->>-User: Display content for site
+	User->>+contentForm: Navigate
+	contentForm->ContentDataService: contentById(contentId, userId)
+	contentForm->>-User: Display form with existing values
+	User->>+contentForm: Submit
+	contentForm-->+CommandBus: UpdateContent
+	CommandBus-->-contentForm: Updated content ID
+	contentForm->>-contentList: redirect
+	contentList->>User: Display updated list
+
+	Note right of User: Delete Content
+	User->>+contentList: Navigate
+	contentList->ContentDataService: contentList(userId, siteId)
+	contentList->>-User: Display content for site
+	User->>+contentList: Delete Button
+	contentList-->+CommandBus: DeleteContent
+	CommandBus-->-contentList: Deleted content ID
+	contentList->>User: Display updated list
+
+	Note right of User: Publish/Push Content
+	User->>+contentList: Navigate
+	contentList-->ContentDataService: contentList(userId, siteId)
+	contentList->>-User: Display content for site
+	User->>+contentPush: Navigate
+	contentPush-->ContentDataService: contentById(contentId, userId)
+	contentPush-->ChannelHandlerRegistry: getChannelHandlers
+	contentPush-->ChannelDataService: getChannelsForSite(siteId, userId)
+	contentPush->>-User: Display content push form
+	User->>+contentPush: Submit Form
+	contentPush-->+CommandBus: PushContentToChannel
+	CommandBus-->-contentPush: ContentChannelEntry
+	contentPush->>-User: Display success; redirect
+
+	Note right of User: Add Channel
+	User->>+channelList: Navigate
+	channelList-->ChannelDataService: getChannelsForSite(siteId, userId)
+	
+	Note right of User: Remove Channel
+	Note right of User: Add External Connection
+	Note right of User: Remove External Connection
+	Note right of User: Refresh External Connection
+	Note right of User: Update Site Options
