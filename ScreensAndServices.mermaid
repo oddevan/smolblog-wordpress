@@ -3,10 +3,24 @@ sequenceDiagram
 	box Screens
 		participant contentList as Content List
 		participant contentForm as Content Form
+		participant contentPush as Content Push Form
+		participant channelForm as Channel Form
+		participant channelList as Channel List
+		participant addConnection as Connection Add Form
+		participant oauthCallback as oAuth Callback
+		participant connectionList as Connection List
+		participant siteOptions as Site Options
 	end
 	box Services
 		participant CommandBus
 		participant ContentDataService
+		participant ContentTypeRegistry
+		participant ContentExtensionRegistry
+		participant ChannelHandlerRegistry
+		participant ChannelDataService
+		participant ConnectionHandlerRegistry
+		participant ConnectionDataService
+		participant SiteDataService
 	end
 
 	Note right of User: Add Content
@@ -17,7 +31,7 @@ sequenceDiagram
 	User->>+contentForm: Submit
 	contentForm-->+CommandBus: CreateContent
 	CommandBus-->-contentForm: Created content ID
-	contentForm->>User: Display success; redirect
+	contentForm->>User: Display success and redirect
 
 	Note right of User: Edit Content
 	User->>+contentList: Navigate
@@ -43,24 +57,75 @@ sequenceDiagram
 
 	Note right of User: Publish/Push Content
 	User->>+contentList: Navigate
-	contentList-->ContentDataService: contentList(userId, siteId)
+	contentList->ContentDataService: contentList(userId, siteId)
 	contentList->>-User: Display content for site
 	User->>+contentPush: Navigate
-	contentPush-->ContentDataService: contentById(contentId, userId)
-	contentPush-->ChannelHandlerRegistry: getChannelHandlers
-	contentPush-->ChannelDataService: getChannelsForSite(siteId, userId)
+	contentPush->ContentDataService: contentById(contentId, userId)
+	contentPush->ChannelHandlerRegistry: getChannelHandlers
+	contentPush->ChannelDataService: getChannelsForSite(siteId, userId)
 	contentPush->>-User: Display content push form
 	User->>+contentPush: Submit Form
 	contentPush-->+CommandBus: PushContentToChannel
 	CommandBus-->-contentPush: ContentChannelEntry
-	contentPush->>-User: Display success; redirect
+	contentPush->>-User: Display success and redirect
 
 	Note right of User: Add Channel
-	User->>+channelList: Navigate
-	channelList-->ChannelDataService: getChannelsForSite(siteId, userId)
+	User->>+channelForm: Navigate
+	channelForm->ChannelDataService: getChannelsForSite(siteId, userId)
+	channelForm->ChannelDataService: getAvailableChannels(userId)
+	channelForm->>-User: Display add channel form
+	User->>+channelForm: Submit Form
+	channelForm-->+CommandBus: AddChannelToSite
+	CommandBus-->-channelForm: success
+	channelForm->>-User: Display success and redirect
 	
 	Note right of User: Remove Channel
+	User->>+channelList: Navigate
+	channelList->ChannelDataService: getChannelsForSite(userId, siteId)
+	channelList->>-User: Display channels for site
+	User->>+channelList: Delete Button
+	channelList-->+CommandBus: RemoveChannelFromSite
+	CommandBus-->-channelList: Deleted channel ID
+	channelList->>User: Display updated list
+
 	Note right of User: Add External Connection
+	User->>+addConnection: Navigate
+	addConnection->ConnectionHandlerRegistry: getAvailableConnections()
+	addConnection->>-User: Display list/form
+	User->>+addConnection: Start Connection
+	addConnection-->+CommandBus: BeginAuthRequest
+	CommandBus-->-addConnection: redirect URL
+	addConnection->>-User: redirect to provider
+	User->>+oauthCallback: redirected from provider
+	oauthCallback-->+CommandBus: FinishAuthRequest
+	CommandBus-->-oauthCallback: redirect URL
+	oauthCallback->>-User: Display success and redirect
+
 	Note right of User: Remove External Connection
+	User->>+connectionList: Navigate
+	connectionList->ConnectionDataService: connectionsForUser(userId)
+	connectionList->>-User: Display list
+	User->>+connectionList: Delete Button
+	connectionList-->+CommandBus: DeleteConnection
+	CommandBus-->-connectionList: success
+	connectionList->>-User: Display updated list
+
 	Note right of User: Refresh External Connection
+	User->>+connectionList: Navigate
+	connectionList->ConnectionDataService: connectionsForUser(userId)
+	connectionList->>-User: Display list
+	User->>+connectionList: Refresh Button
+	connectionList-->+CommandBus: RefreshConnection
+	CommandBus-->-connectionList: success
+	connectionList-->+CommandBus: RefreshChannels
+	CommandBus-->-connectionList: success
+	connectionList->>-User: Display updated list
+
 	Note right of User: Update Site Options
+	User->>+siteOptions: Navigate
+	siteOptions->SiteDataService: siteDetails(userId, siteId)
+	siteOptions->>-User: Display form
+	User->>+siteOptions: Submit form
+	siteOptions-->+CommandBus: UpdateSiteDetails
+	CommandBus-->-siteOptions: success
+	siteOptions->>-User: Display updated form
