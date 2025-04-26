@@ -25,8 +25,8 @@ sequenceDiagram
 
 	Note right of User: Add Content
 	User->>+contentForm: Navigate
-	contentForm->ContentTypeRegistry: getContentTypes
-	contentForm->ContentExtensionRegistry: getContentExtensions
+	contentForm->ContentTypeRegistry: availableContentTypes
+	contentForm->ContentExtensionRegistry: availableContentExtensions
 	contentForm->>-User: Display empty form
 	User->>+contentForm: Submit
 	contentForm-->+CommandBus: CreateContent
@@ -61,8 +61,8 @@ sequenceDiagram
 	contentList->>-User: Display content for site
 	User->>+contentPush: Navigate
 	contentPush->ContentDataService: contentById(contentId, userId)
-	contentPush->ChannelHandlerRegistry: getChannelHandlers
-	contentPush->ChannelDataService: getChannelsForSite(siteId, userId)
+	contentPush->ChannelHandlerRegistry: availableChannelHandlers
+	contentPush->ChannelDataService: channelsForSite(siteId, userId)
 	contentPush->>-User: Display content push form
 	User->>+contentPush: Submit Form
 	contentPush-->+CommandBus: PushContentToChannel
@@ -71,8 +71,8 @@ sequenceDiagram
 
 	Note right of User: Add Channel
 	User->>+channelForm: Navigate
-	channelForm->ChannelDataService: getChannelsForSite(siteId, userId)
-	channelForm->ChannelDataService: getAvailableChannels(userId)
+	channelForm->ChannelDataService: channelsForSite(siteId, userId)
+	channelForm->ChannelDataService: availableChannels(userId)
 	channelForm->>-User: Display add channel form
 	User->>+channelForm: Submit Form
 	channelForm-->+CommandBus: AddChannelToSite
@@ -81,7 +81,7 @@ sequenceDiagram
 	
 	Note right of User: Remove Channel
 	User->>+channelList: Navigate
-	channelList->ChannelDataService: getChannelsForSite(userId, siteId)
+	channelList->ChannelDataService: channelsForSite(userId, siteId)
 	channelList->>-User: Display channels for site
 	User->>+channelList: Delete Button
 	channelList-->+CommandBus: RemoveChannelFromSite
@@ -90,7 +90,7 @@ sequenceDiagram
 
 	Note right of User: Add External Connection
 	User->>+addConnection: Navigate
-	addConnection->ConnectionHandlerRegistry: getAvailableConnections()
+	addConnection->ConnectionHandlerRegistry: availableConnections()
 	addConnection->>-User: Display list/form
 	User->>+addConnection: Start Connection
 	addConnection-->+CommandBus: BeginAuthRequest
@@ -123,7 +123,7 @@ sequenceDiagram
 
 	Note right of User: Update Site Options
 	User->>+siteOptions: Navigate
-	siteOptions->SiteDataService: siteDetails(userId, siteId)
+	siteOptions->SiteDataService: siteById(userId, siteId)
 	siteOptions->>-User: Display form
 	User->>+siteOptions: Submit form
 	siteOptions-->+CommandBus: UpdateSiteDetails
