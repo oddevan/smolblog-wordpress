@@ -28,7 +28,6 @@ use Smolblog\WP\App;
 add_filter('admin_footer_text', fn() => '<span style="color: #9cd398; font-weight: bold">Smolblog 0.4.0</span>', 2000);
 
 add_filter('wds_required_plugins', fn($required) => array_merge($required, [
-	'advanced-custom-fields/acf.php',
 	'disable-comments/disable-comments.php',
 ]));
 

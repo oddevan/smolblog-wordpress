@@ -116,6 +116,11 @@ class PermissionsAdapter implements SitePermissionsService, GlobalPermissionsSer
 	 */
 	public function canCreateSite(Identifier $userId): bool { return false; }
 
+	public function canManageOtherConnections(Identifier $userId): bool
+	{
+		return false;
+	}
+
 	private function wordPressUserOrFalse(Identifier $userId, Identifier $siteId): int|false {
 		if (!$this->sites->hasSiteWithId($siteId)) {
 			// echo "No WP site for id $siteId";

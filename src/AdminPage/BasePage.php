@@ -6,10 +6,10 @@ use Formr\Formr;
 use Smolblog;
 use Smolblog\Core\Content\Commands\CreateContent;
 use Smolblog\Core\Content\Extensions\Tags\Tags;
+use Smolblog\Core\Content\Services\ContentDataService;
 use Smolblog\Core\Content\Services\ContentExtensionRegistry;
 use Smolblog\Core\Content\Services\ContentTypeRegistry;
 use Smolblog\Core\Content\Types\Note\Note;
-use Smolblog\CoreDataSql\ContentProjection;
 use Smolblog\Foundation\Service\Command\CommandBus;
 use Smolblog\WP\WordPressEnvironment;
 
@@ -30,7 +30,7 @@ class BasePage implements AdminPage {
 		private Formr $form,
 		private WordPressEnvironment $env,
 		private CommandBus $cmd,
-		private ContentProjection $content,
+		private ContentDataService $content,
 	) {}
 
 	public function handleForm(): void {
@@ -70,7 +70,10 @@ class BasePage implements AdminPage {
 		]);
 
 		echo '<hr>';
-		$notes = $this->content->contentList();
+		$notes = $this->content->contentList(
+			siteId: $this->env->getSiteId(),
+			currentUserId: $this->env->getUserId(),
+		);
 		?>
 
 		<h3>Latest Notes</h3>
