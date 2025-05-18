@@ -48,7 +48,10 @@ class Smolblog {
 	 * @return void
 	 */
 	public static function init(): void {
+		// Load Admin pages.
 		add_action('admin_menu', fn() => self::get(AdminPageRegistry::class)->register());
+		// Load media library scripts.
+		add_action('admin_enqueue_scripts', fn() => wp_enqueue_media());
 	}
 
 	/**

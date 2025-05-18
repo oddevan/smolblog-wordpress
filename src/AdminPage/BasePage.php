@@ -5,12 +5,18 @@ namespace Smolblog\WP\AdminPage;
 use Formr\Formr;
 use Smolblog;
 use Smolblog\Core\Content\Commands\CreateContent;
+use Smolblog\Core\Content\Entities\Content;
 use Smolblog\Core\Content\Extensions\Tags\Tags;
+use Smolblog\Core\Content\Extensions\Warnings\ContentWarning;
+use Smolblog\Core\Content\Extensions\Warnings\Warnings;
 use Smolblog\Core\Content\Services\ContentDataService;
 use Smolblog\Core\Content\Services\ContentExtensionRegistry;
 use Smolblog\Core\Content\Services\ContentTypeRegistry;
 use Smolblog\Core\Content\Types\Note\Note;
+use Smolblog\Core\Content\Types\Picture\Picture;
+use Smolblog\Core\Content\Types\Reblog\Reblog;
 use Smolblog\Foundation\Service\Command\CommandBus;
+use Smolblog\WP\FormBuilder;
 use Smolblog\WP\WordPressEnvironment;
 
 class BasePage implements AdminPage {
@@ -61,6 +67,7 @@ class BasePage implements AdminPage {
 	}
 
 	public function displayPage(): void {
+		$builder = new FormBuilder();
 		echo '<p>The future of blogging awaits! This ain\'t it, though.</p>';
 
 		// $this->form->action = '';
@@ -72,9 +79,17 @@ class BasePage implements AdminPage {
 		echo '<hr>';
 		$notes = $this->content->contentList(
 			siteId: $this->env->getSiteId(),
-			currentUserId: $this->env->getUserId(),
+			userId: $this->env->getUserId(),
 		);
 		?>
+
+		<style>
+			fieldset {
+				border: 1px solid black;
+				background-color: rgba(255, 255, 255, 0.5);
+				padding: .5em 1em 1em 1em;
+			}
+		</style>
 
 		<h3>Latest Notes</h3>
 
@@ -85,6 +100,13 @@ class BasePage implements AdminPage {
 					<p>Posted <?= $note->publishTimestamp?->object?->format('F n, Y') ?? 'never' ?></p>
 			<?php endforeach; ?>
 		</ol>
+
+		<hr>
+
+		<h3>Debug</h3>
+
+		<?php echo $builder->fieldsetForClass(Tags::class); ?>
+
 		<?php
 	}
 }
