@@ -115,7 +115,7 @@ class FormBuilder {
 	}
 
 	private function repeaterField(string $fieldName, ValueProperty $info): string {
-		$html = "<fieldset><legend>{$fieldName}</legend>";
+		$html = "<fieldset data-repeater-list='{$fieldName}'><legend>{$fieldName}</legend>";
 		$html .= $this->fieldForProperty($fieldName . '[]', new ValueProperty(type: $info->items));
 		$html .= "</fieldset>";
 

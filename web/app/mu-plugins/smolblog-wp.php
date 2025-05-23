@@ -51,7 +51,15 @@ class Smolblog {
 		// Load Admin pages.
 		add_action('admin_menu', fn() => self::get(AdminPageRegistry::class)->register());
 		// Load media library scripts.
-		add_action('admin_enqueue_scripts', fn() => wp_enqueue_media());
+		add_action('admin_enqueue_scripts', function() {
+			wp_enqueue_media();
+			wp_enqueue_script(
+				'jquery.repeater',
+				'https://cdnjs.cloudflare.com/ajax/libs/jquery.repeater/1.2.1/jquery.repeater.min.js',
+				['jquery'],
+				null,
+			);
+		});
 	}
 
 	/**
