@@ -105,7 +105,9 @@ class BasePage implements AdminPage {
 
 		<h3>Debug</h3>
 
-		<?php echo $builder->fieldsetForClass(Tags::class); ?>
+		<form>
+			<?php echo $builder->fieldsetForClass(NoteContent::class); ?>
+		</form>
 
 		<?php
 	}

@@ -115,9 +115,13 @@ class FormBuilder {
 	}
 
 	private function repeaterField(string $fieldName, ValueProperty $info): string {
-		$html = "<fieldset data-repeater-list='{$fieldName}'><legend>{$fieldName}</legend>";
+		$html = "<div class='repeater'><fieldset data-repeater-list='{$fieldName}'><legend>{$fieldName}</legend>";
+		$html .= '<div data-repeater-item>';
 		$html .= $this->fieldForProperty($fieldName . '[]', new ValueProperty(type: $info->items));
-		$html .= "</fieldset>";
+		$html .= '<button data-repeater-delete type="button" aria-label="Remove"><span class="dashicons dashicons-no"></span></button>';
+		$html .= '</div>';
+		$html .= '<button data-repeater-create type="button" aria-label="Add"><span class="dashicons dashicons-plus"></span></button>';
+		$html .= "</fieldset></div>";
 
 		return $html;
 	}

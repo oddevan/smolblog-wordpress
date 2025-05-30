@@ -59,6 +59,22 @@ class Smolblog {
 				['jquery'],
 				null,
 			);
+
+			wp_add_inline_script('jquery.repeater', <<<EOF
+				jQuery(document).ready(function () {
+						jQuery('.repeater').repeater({
+								initEmpty: true,
+								show: function () {
+										jQuery(this).slideDown();
+								},
+								hide: function (deleteElement) {
+										if(confirm('Are you sure you want to delete this element?')) {
+												jQuery(this).slideUp(deleteElement);
+										}
+								},
+						})
+				});
+			EOF);
 		});
 	}
 
