@@ -4,6 +4,8 @@ namespace Smolblog\WP;
 
 use BackedEnum;
 use ReflectionEnum;
+use Smolblog\Core\Content\Extensions\Tags\Tags;
+use Smolblog\Core\Content\Extensions\Warnings\Warnings;
 use Smolblog\Core\Media\Entities\Media;
 use Smolblog\Foundation\Value\Fields\{DateTimeField, Identifier, Markdown, Url};
 use Smolblog\Foundation\Value\Traits\ArrayType;
@@ -39,14 +41,36 @@ class FormBuilder {
 		return '';
 	}
 
-	public function fieldsetForClass(string $class, string $prefix = ''): string {
+	public function fieldsetForClass(string $class, ?string $prefix = null): string {
 		$reflection = $class::reflection();
 		$html = "<fieldset><legend>{$class}</legend>";
 		foreach ($reflection as $prop => $info) {
-			$html .= $this->fieldForProperty($prefix . $prop, $info);
+			$html .= $this->fieldForProperty($prefix ? "{$prefix}[{$prop}]" : $prop, $info);
 		}
 		$html .= '</fieldset>';
 		return self::mediaJs() . $html;
+	}
+
+	public function shapeInputForClass(string $class, mixed $input): mixed {
+		$reflection = $class::reflection();
+		$shaped = $input;
+
+		foreach ($reflection as $prop => $info) {
+			if (!isset($shaped[$prop])) {
+				continue;
+			}
+
+			$shaped[$prop] = match ($info->type) {
+				Tags::class => ['tags' => array_map(fn($tag) => $tag['item'], $input[$prop]['tags'])],
+				Warnings::class => ['warnings' => array_map(
+					fn($warn) => ['content' => $warn['content'], 'mention' => !empty($warn['mention'])],
+					$input[$prop]['warnings']
+				)],
+				default => $shaped[$prop],
+			};
+		}
+
+		return $shaped;
 	}
 
 	private function fieldForProperty(string $fieldName, ValueProperty $info): string {
@@ -57,7 +81,7 @@ class FormBuilder {
 			!is_a($info->type, Field::class, allow_string: true)
 		) {
 			// It is a class that is not a single value. Get the set.
-			return $this->fieldsetForClass($info->type, $fieldName . '_');
+			return $this->fieldsetForClass($info->type, $fieldName);
 		}
 
 		if ($info->type === 'array') {
@@ -117,7 +141,7 @@ class FormBuilder {
 	private function repeaterField(string $fieldName, ValueProperty $info): string {
 		$html = "<div class='repeater'><fieldset data-repeater-list='{$fieldName}'><legend>{$fieldName}</legend>";
 		$html .= '<div data-repeater-item>';
-		$html .= $this->fieldForProperty($fieldName . '[]', new ValueProperty(type: $info->items));
+		$html .= $this->fieldForProperty('[item]', new ValueProperty(type: $info->items));
 		$html .= '<button data-repeater-delete type="button" aria-label="Remove"><span class="dashicons dashicons-no"></span></button>';
 		$html .= '</div>';
 		$html .= '<button data-repeater-create type="button" aria-label="Add"><span class="dashicons dashicons-plus"></span></button>';

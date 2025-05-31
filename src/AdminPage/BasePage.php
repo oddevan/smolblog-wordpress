@@ -18,6 +18,7 @@ use Smolblog\Core\Content\Types\Reblog\Reblog;
 use Smolblog\Foundation\Service\Command\CommandBus;
 use Smolblog\WP\FormBuilder;
 use Smolblog\WP\WordPressEnvironment;
+use Throwable;
 
 class BasePage implements AdminPage {
 	public static function getConfiguration(): AdminPageConfiguration {
@@ -39,6 +40,7 @@ class BasePage implements AdminPage {
 		private ContentDataService $content,
 	) {}
 
+	/*
 	public function handleForm(): void {
 		// get our form values and assign them to a variable
     $data = $this->form->fastpost([
@@ -65,16 +67,37 @@ class BasePage implements AdminPage {
         $this->form->success_message = "Validation passed.";
     }
 	}
+		*/
+	public function handleForm(): void {
+		$builder = new FormBuilder();
+
+		echo '<h3>Post array:</h3><pre><code>';
+		print_r($_POST);
+		echo '</code></pre>';
+
+		$shaped = $builder->shapeInputForClass(class: NoteContent::class, input: $_POST);
+		echo '<h3>Shaped:</h3><pre><code>';
+		print_r($shaped);
+		echo '</code></pre>';
+
+		echo '<h3>Parsed:</h3><pre><code>';
+		try {
+			print_r(NoteContent::deserializeValue($shaped));
+		} catch (Throwable $e) {
+			echo $e->getMessage();
+		}
+		echo '</code></pre>';
+	}
 
 	public function displayPage(): void {
 		$builder = new FormBuilder();
 		echo '<p>The future of blogging awaits! This ain\'t it, though.</p>';
 
 		// $this->form->action = '';
-		$this->form->fastform([
-			'textarea' => 'body_text,Note',
-			'text' => 'extensions_tags_tags,Tags',
-		]);
+		// $this->form->fastform([
+		// 	'textarea' => 'body_text,Note',
+		// 	'text' => 'extensions_tags_tags,Tags',
+		// ]);
 
 		echo '<hr>';
 		$notes = $this->content->contentList(
@@ -105,8 +128,9 @@ class BasePage implements AdminPage {
 
 		<h3>Debug</h3>
 
-		<form>
+		<form method="post" action="<?php echo admin_url('admin.php?page=' . static::getConfiguration()->key) ?>">
 			<?php echo $builder->fieldsetForClass(NoteContent::class); ?>
+			<?php submit_button( $text = null, $type = 'primary', $name = 'submit', $wrap = true, $other_attributes = null ); ?>
 		</form>
 
 		<?php
