@@ -106,14 +106,6 @@ class BasePage implements AdminPage {
 		);
 		?>
 
-		<style>
-			fieldset {
-				border: 1px solid black;
-				background-color: rgba(255, 255, 255, 0.5);
-				padding: .5em 1em 1em 1em;
-			}
-		</style>
-
 		<h3>Latest Notes</h3>
 
 		<ol>
@@ -128,9 +120,9 @@ class BasePage implements AdminPage {
 
 		<h3>Debug</h3>
 
-		<form method="post" action="<?php echo admin_url('admin.php?page=' . static::getConfiguration()->key) ?>">
+		<form class="sb-autogen" method="post" action="<?php echo admin_url('admin.php?page=' . static::getConfiguration()->key) ?>">
 			<?php echo $builder->fieldsetForClass(NoteContent::class); ?>
-			<?php submit_button( $text = null, $type = 'primary', $name = 'submit', $wrap = true, $other_attributes = null ); ?>
+			<?php submit_button('Save'); ?>
 		</form>
 
 		<?php
