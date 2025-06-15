@@ -75,6 +75,23 @@ class Smolblog {
 						})
 				});
 			EOF);
+
+			wp_add_inline_script('media-editor', <<<EOF
+				function mediaLibraryFor(fieldId) {
+					return (clickEvent) => {
+						clickEvent?.preventDefault;
+						const frame = wp.media({ title: 'Select Image', multiple: false });
+						frame.on('select', (selectEvent) => {
+							const attachment = frame.state().get('selection').first().toJSON();
+							const field = document.getElementById(fieldId);
+							field.value = attachment.id;
+							const thumbnail = document.getElementById(fieldId + '_thumbnail');
+							thumbnail.innerHTML = '<img src="' + attachment.sizes.thumbnail.url + '" width="50" height="50" alt="' + attachment.alt + '">'; 
+						});
+						frame.open();
+					};
+				}
+			EOF);
 		});
 	}
 

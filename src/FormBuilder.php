@@ -13,34 +13,6 @@ use Smolblog\Foundation\Value\Traits\Field;
 use Smolblog\Foundation\Value\ValueProperty;
 
 class FormBuilder {
-	private static bool $mediaJsEnqueued = false;
-	private static bool $mediaJsOutput = false;
-
-	private static function mediaJs(): string {
-		if (self::$mediaJsEnqueued && !self::$mediaJsOutput) {
-			self::$mediaJsOutput = true;
-			return <<<EOF
-			<script type="text/javascript">
-				function mediaLibraryFor(fieldId) {
-					return (clickEvent) => {
-						clickEvent?.preventDefault;
-						const frame = wp.media({ title: 'Select Image', multiple: false });
-						frame.on('select', (selectEvent) => {
-							const attachment = frame.state().get('selection').first().toJSON();
-							const field = document.getElementById(fieldId);
-							field.value = attachment.id;
-							const thumbnail = document.getElementById(fieldId + '_thumbnail');
-							thumbnail.innerHTML = '<img src="' + attachment.sizes.thumbnail.url + '" width="50" height="50" alt="' + attachment.alt + '">'; 
-						});
-						frame.open();
-					};
-				}
-			</script>
-			EOF;
-		}
-		return '';
-	}
-
 	public function fieldsetForClass(string $class, ?string $prefix = null): string {
 		$reflection = $class::reflection();
 		$html = "<fieldset><legend>{$class}</legend>";
@@ -48,7 +20,7 @@ class FormBuilder {
 			$html .= $this->fieldForProperty($prefix ? "{$prefix}[{$prop}]" : $prop, $info);
 		}
 		$html .= '</fieldset>';
-		return self::mediaJs() . $html;
+		return $html;
 	}
 
 	public function shapeInputForClass(string $class, mixed $input): mixed {
@@ -125,7 +97,6 @@ class FormBuilder {
 			case Media::class:
 				$element = "<input type='hidden' id='{$fieldId}' name='{$fieldName}'><span id='{$fieldId}_thumbnail'></span>";
 				$element .= "<button type='button' class='button-primary button-small' id='{$fieldId}_button' onClick=\"mediaLibraryFor('{$fieldId}')()\">Select Media</button>";
-				self::$mediaJsEnqueued = true;
 				break;
 			
 			case 'string':
