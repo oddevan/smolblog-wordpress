@@ -1,6 +1,5 @@
 form.sb-autogen {
 	--accent-color: #2271b1;
-
 	max-width: 40rem;
 
 	fieldset {
@@ -27,6 +26,13 @@ form.sb-autogen {
 			margin-block-end: 2em;
 		}
 
+		&:has(input[type=checkbox]) {
+			display: flex;
+			flex-direction: row-reverse;
+			justify-content: flex-end;
+			align-items: center;
+		}
+
 		label {
 			font-weight: bold;
 			display: block;
@@ -41,6 +47,16 @@ form.sb-autogen {
 
 		>.form-field {
 			margin-block-end: 0;
+			width: 100%;
+
+			>label {
+				display: none;
+			}
+		}
+
+		>fieldset {
+			width: calc(100% - 2em);
+			margin-block-end: 0;
 		}
 
 		&:has(fieldset) {
@@ -48,6 +64,7 @@ form.sb-autogen {
 		}
 	}
 
+	[data-repeater-create],
 	[data-repeater-delete] {
 		color: var(--accent-color);
 		border: 1px solid var(--accent-color);

@@ -7,15 +7,31 @@ use ReflectionEnum;
 use Smolblog\Core\Content\Extensions\Tags\Tags;
 use Smolblog\Core\Content\Extensions\Warnings\Warnings;
 use Smolblog\Core\Media\Entities\Media;
+use Smolblog\Foundation\Value;
 use Smolblog\Foundation\Value\Fields\{DateTimeField, Identifier, Markdown, Url};
 use Smolblog\Foundation\Value\Traits\ArrayType;
 use Smolblog\Foundation\Value\Traits\Field;
 use Smolblog\Foundation\Value\ValueProperty;
 
 class FormBuilder {
-	public function fieldsetForClass(string $class, ?string $prefix = null): string {
-		$reflection = $class::reflection();
-		$html = "<fieldset><legend>{$class}</legend>";
+	/**
+	 * Create a fieldset element with the fields for the given class or class reflection.
+	 *
+	 * @param class-string<Value>|ValueProperty[] $class
+	 * @param string|null $prefix
+	 * @return string
+	 */
+	public function fieldsetForClass(string|array $class, ?string $prefix = null, ?string $name = null): string {
+		$reflection = is_array($class) ? $class : $class::reflection();
+		$legend = $name ?? (is_array($class) ? null : static::nameFromClassName($class));
+		// if (count($reflection) === 1) {
+		// 	$info = array_pop($reflection);
+		// 	if (isset($info) && $info->type === 'array') {
+		// 		return $this->fieldForProperty($prefix ? "{$prefix}[{$info->name}]" : $info->name, $info);
+		// 	}
+		// }
+
+		$html = "<fieldset><legend>{$legend}</legend>";
 		foreach ($reflection as $prop => $info) {
 			$html .= $this->fieldForProperty($prefix ? "{$prefix}[{$prop}]" : $prop, $info);
 		}
@@ -61,7 +77,7 @@ class FormBuilder {
 		}
 
 		$fieldId = $fieldName . '_field';
-		$label = "<label for='{$fieldId}'>{$fieldName}</label>";
+		$label = "<label for='{$fieldId}'>{$info->displayName}</label>";
 		$element = '';
 
 		if (is_a($info->type, BackedEnum::class, allow_string: true)) {
@@ -110,9 +126,9 @@ class FormBuilder {
 	}
 
 	private function repeaterField(string $fieldName, ValueProperty $info): string {
-		$html = "<div class='repeater'><fieldset data-repeater-list='{$fieldName}'><legend>{$fieldName}</legend>";
+		$html = "<div class='repeater'><fieldset data-repeater-list='{$fieldName}'><legend>{$info->displayName}</legend>";
 		$html .= '<div data-repeater-item>';
-		$html .= $this->fieldForProperty('[item]', new ValueProperty(type: $info->items));
+		$html .= $this->fieldForProperty('[item]', $info->with(type: $info->items));
 		$html .= '<button data-repeater-delete type="button" aria-label="Remove"><span class="dashicons dashicons-no"></span></button>';
 		$html .= '</div>';
 		$html .= '<button data-repeater-create type="button" aria-label="Add"><span class="dashicons dashicons-plus"></span></button>';
@@ -129,6 +145,17 @@ class FormBuilder {
 		}
 		return $cases;
 	}
-}
 
-?>
+	/**
+	 * Create a display name from a class name.
+	 *
+	 * @param class-string $class Class to translate.
+	 * @return string
+	 */
+	public static function nameFromClassName(string $class): string {
+		$parsed = strrchr($class, '\\');
+		$className = ($parsed === false) ? $class : ltrim($parsed, '\\');
+
+		return ucwords(implode(' ', preg_split('/(?=[A-Z])/', $className) ?: []));
+	}
+}
