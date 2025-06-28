@@ -4,6 +4,7 @@ namespace Smolblog\WP;
 
 use BackedEnum;
 use ReflectionEnum;
+use ReflectionEnumBackedCase;
 use Smolblog\Core\Content\Extensions\Tags\Tags;
 use Smolblog\Core\Content\Extensions\Warnings\Warnings;
 use Smolblog\Core\Media\Entities\Media;
@@ -141,7 +142,9 @@ class FormBuilder {
 		$reflector = new ReflectionEnum($class);
 		$cases = [];
 		foreach ($reflector->getCases() as $case) {
-			$cases[$case->getBackingValue()] = $case->getName();
+			if (is_a($case, ReflectionEnumBackedCase::class)) {
+				$cases[$case->getBackingValue()] = $case->getName();
+			}
 		}
 		return $cases;
 	}
