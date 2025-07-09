@@ -75,14 +75,14 @@ class BasePage implements AdminPage {
 		print_r($_POST);
 		echo '</code></pre>';
 
-		$shaped = $builder->shapeInputForClass(class: NoteContent::class, input: $_POST);
+		$shaped = $builder->shapeInputForClass(class: Content::class, input: $_POST);
 		echo '<h3>Shaped:</h3><pre><code>';
 		print_r($shaped);
 		echo '</code></pre>';
 
 		echo '<h3>Parsed:</h3><pre><code>';
 		try {
-			print_r(NoteContent::deserializeValue($shaped));
+			print_r(Content::deserializeValue($shaped));
 		} catch (Throwable $e) {
 			echo $e->getMessage();
 		}
@@ -121,7 +121,7 @@ class BasePage implements AdminPage {
 		<h3>Debug</h3>
 
 		<form class="sb-autogen" method="post" action="<?php echo admin_url('admin.php?page=' . static::getConfiguration()->key) ?>">
-			<?php echo $builder->fieldsetForClass(NoteContent::class); ?>
+			<?php echo $builder->fieldsetForClass(Content::class); ?>
 			<?php submit_button('Save'); ?>
 		</form>
 

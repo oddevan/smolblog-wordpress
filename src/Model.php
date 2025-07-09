@@ -12,11 +12,13 @@ class Model extends DomainModel {
 	const AUTO_SERVICES = [
 		AdminPage\AdminPageRegistry::class,
 		AdminPage\BasePage::class,
+		AdminPage\ContentForm::class,
 		Adapters\AuthRequestStateAdapter::class,
 		Adapters\PermissionsAdapter::class,
 		Adapters\SiteAdapter::class,
 		Adapters\UserAdapter::class,
 		WordPressEnvironment::class,
+		FormBuilder::class,
 	];
 
 	const SERVICES = [

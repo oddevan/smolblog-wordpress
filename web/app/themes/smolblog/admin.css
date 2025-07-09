@@ -21,6 +21,12 @@ form.sb-autogen {
 		}
 	}
 
+		legend {
+			float: unset;
+			width: unset;
+			padding-inline: .5em;
+			margin-bottom: unset;
+		}
 	.form-field {
 		&:not(:last-child) {
 			margin-block-end: 2em;

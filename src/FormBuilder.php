@@ -22,7 +22,7 @@ class FormBuilder {
 	 * @param string|null $prefix
 	 * @return string
 	 */
-	public function fieldsetForClass(string|array $class, ?string $prefix = null, ?string $name = null): string {
+	public function fieldsetForClass(string|array $class, ?string $prefix = null, ?string $name = null, bool $hideLegend = false): string {
 		$reflection = is_array($class) ? $class : $class::reflection();
 		$legend = $name ?? (is_array($class) ? null : static::nameFromClassName($class));
 		// if (count($reflection) === 1) {
@@ -32,7 +32,8 @@ class FormBuilder {
 		// 	}
 		// }
 
-		$html = "<fieldset><legend>{$legend}</legend>";
+		$legendClass= $hideLegend ? ' class="visually-hidden"' : '';
+		$html = "<fieldset><legend{$legendClass}>{$legend}</legend>";
 		foreach ($reflection as $prop => $info) {
 			$html .= $this->fieldForProperty($prefix ? "{$prefix}[{$prop}]" : $prop, $info);
 		}
@@ -40,8 +41,8 @@ class FormBuilder {
 		return $html;
 	}
 
-	public function shapeInputForClass(string $class, mixed $input): mixed {
-		$reflection = $class::reflection();
+	public function shapeInputForClass(string|array $class, mixed $input): mixed {
+		$reflection = is_array($class) ? $class : $class::reflection();
 		$shaped = $input;
 
 		foreach ($reflection as $prop => $info) {
