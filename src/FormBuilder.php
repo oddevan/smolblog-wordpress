@@ -25,14 +25,8 @@ class FormBuilder {
 	public function fieldsetForClass(string|array $class, ?string $prefix = null, ?string $name = null, bool $hideLegend = false): string {
 		$reflection = is_array($class) ? $class : $class::reflection();
 		$legend = $name ?? (is_array($class) ? null : static::nameFromClassName($class));
-		// if (count($reflection) === 1) {
-		// 	$info = array_pop($reflection);
-		// 	if (isset($info) && $info->type === 'array') {
-		// 		return $this->fieldForProperty($prefix ? "{$prefix}[{$info->name}]" : $info->name, $info);
-		// 	}
-		// }
 
-		$legendClass= $hideLegend ? ' class="visually-hidden"' : '';
+		$legendClass = $hideLegend ? ' class="visually-hidden"' : '';
 		$html = "<fieldset><legend{$legendClass}>{$legend}</legend>";
 		foreach ($reflection as $prop => $info) {
 			$html .= $this->fieldForProperty($prefix ? "{$prefix}[{$prop}]" : $prop, $info);

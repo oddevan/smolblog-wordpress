@@ -2,23 +2,11 @@
 
 namespace Smolblog\WP\AdminPage;
 
-use Formr\Formr;
-use Smolblog;
-use Smolblog\Core\Content\Commands\CreateContent;
 use Smolblog\Core\Content\Entities\Content;
-use Smolblog\Core\Content\Extensions\Tags\Tags;
-use Smolblog\Core\Content\Extensions\Warnings\ContentWarning;
-use Smolblog\Core\Content\Extensions\Warnings\Warnings;
-use Smolblog\Core\Content\Services\ContentDataService;
 use Smolblog\Core\Content\Services\ContentExtensionRegistry;
 use Smolblog\Core\Content\Services\ContentTypeRegistry;
-use Smolblog\Core\Content\Types\Note\Note;
-use Smolblog\Core\Content\Types\Picture\Picture;
-use Smolblog\Core\Content\Types\Reblog\Reblog;
-use Smolblog\Foundation\Service\Command\CommandBus;
 use Smolblog\WP\FormBuilder;
 use Smolblog\WP\WordPressEnvironment;
-use Throwable;
 
 class ContentForm implements AdminPage {
 	public static function getConfiguration(): AdminPageConfiguration {
@@ -30,11 +18,10 @@ class ContentForm implements AdminPage {
 		);
 	}
 
-	private array $formData = [];
-
 	public function __construct(
 		private WordPressEnvironment $env,
 		private ContentTypeRegistry $types,
+		private ContentExtensionRegistry $extensions,
 		private FormBuilder $builder,
 	) {}
 
@@ -60,72 +47,117 @@ class ContentForm implements AdminPage {
 	}
 
 	public function displayPage(): void {
-		$activeType = null; // Can set based on existing data?
-
-		$types = $this->types->availableContentTypes();
-		$activeType ??= array_keys($types)[0];
+		$contentFields = Content::reflection();
 	?>
 
 	<form
 		class="sb-autogen" method="post"
 		action="<?php echo admin_url('admin.php?page=' . static::getConfiguration()->key) ?>"
 	>
-		<ul class="nav nav-pills" id="myTab" role="tablist">
-		<?php foreach ($types as $key => $display) : ?>
-			<?php $isActive = ($key === $activeType); ?>
-			<li class="nav-item" role="presentation">
-				<button
-					class="nav-link<?php echo $isActive ? ' active' : ''; ?>"
-					id="<?php echo $key; ?>-tab" data-bs-toggle="tab"
-					data-bs-target="#<?php echo $key; ?>-tab-pane" type="button" role="tab"
-					aria-controls="<?php echo $key; ?>-tab-pane"
-					aria-selected="<?php echo $isActive ? 'true' : 'false'; ?>"
-					data-smolblog-content-type="<?php echo $key; ?>"
-				>
-					<?php echo $display; ?>
-				</button>
-			</li>
-		<?php endforeach; ?>
-		</ul>
-		<div class="tab-content" id="myTabContent">
-		<?php foreach (array_keys($types) as $key) : ?>
-			<?php $isActive = ($key === $activeType); ?>
-			<div
-				class="tab-pane fade<?php echo $isActive ? ' show active' : ''; ?>"
-				id="<?php echo $key; ?>-tab-pane" role="tabpanel"
-				aria-labelledby="<?php echo $key; ?>-tab" tabindex="0"
-			>
-				<?php echo $this->builder->fieldsetForClass(
-					class: $this->types->typeClassFor($key),
-					prefix: "body[{$key}]",
-					hideLegend: true,
-				); ?>
+		<?php $this->contentTypeForm(); ?>
+
+		<div class="accordion" id="content-accordion">
+			<div class="accordion-item">
+				<h2 class="accordion-header">
+					<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#content-accordion-base" aria-expanded="true" aria-controls="content-accordion-base">
+						Content Details
+					</button>
+				</h2>
+				<div id="content-accordion-base" class="accordion-collapse collapse show" data-bs-parent="#content-accordion">
+					<div class="accordion-body">
+						<?php echo $this->builder->fieldsetForClass(
+							class: [
+								'publishTimestamp' => $contentFields['publishTimestamp'],
+								'canonicalUrl' => $contentFields['canonicalUrl'],
+							],
+							hideLegend: true,
+						); ?>
+					</div>
+				</div>
 			</div>
-		<?php endforeach; ?>
+			<?php foreach ($this->extensions->availableContentExtensions() as $key => $name): ?>
+			<div class="accordion-item">
+				<h2 class="accordion-header">
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#content-accordion-<?php echo $key; ?>" aria-expanded="false" aria-controls="content-accordion-<?php echo $key; ?>">
+						<?php echo $name; ?>
+					</button>
+				</h2>
+				<div id="content-accordion-<?php echo $key; ?>" class="accordion-collapse collapse" data-bs-parent="#content-accordion">
+					<div class="accordion-body">
+						<?php echo $this->builder->fieldsetForClass(
+							class: $this->extensions->extensionClassFor($key),
+							prefix: "extensions[{$key}]",
+							hideLegend: true,
+						); ?>
+					</div>
+				</div>
+			</div>
+			<?php endforeach; ?>
 		</div>
-
-		<input id="body-active-tab" type="hidden" name="body-active" value="<?php echo $activeType; ?>" />
-
-		<?php echo $this->builder->fieldsetForClass(Content::class); ?>
+		
 		<?php submit_button('Save'); ?>
-
-		<script>
-			jQuery(document).ready(() => {
-				jQuery('button[data-bs-toggle="tab"]').each((ind, btn) => {
-					console.log('Set event handler', btn);
-					btn.addEventListener('shown.bs.tab', (event) => {
-						const newType = jQuery(event.target).data('smolblog-content-type');
-						jQuery('#body-active-tab').val(newType);
-						console.log('Type updated', newType);
-					});
-				});
-				console.log('Ran ready function.');
-			});
-			console.log('Loaded function.');
-		</script>
 
 	</form>
 
+		<?php
+	}
+
+	private function contentTypeForm(?string $only = null) {
+		$activeType = null;
+
+		$types = $this->types->availableContentTypes();
+		if (isset($only) && array_key_exists($only, $types)) {
+			$types = [ $only => $types[$only] ]; // basically an array_filter, but simpler.
+		}
+
+		$activeType ??= array_keys($types)[0];
+
+		?>
+			<ul class="nav nav-pills" role="tablist">
+			<?php foreach ($types as $key => $display) : ?>
+				<?php $isActive = ($key === $activeType); ?>
+				<li class="nav-item" role="presentation">
+					<button
+						class="nav-link<?php echo $isActive ? ' active' : ''; ?>"
+						id="<?php echo $key; ?>-tab" data-bs-toggle="tab"
+						data-bs-target="#<?php echo $key; ?>-tab-pane" type="button" role="tab"
+						aria-controls="<?php echo $key; ?>-tab-pane"
+						aria-selected="<?php echo $isActive ? 'true' : 'false'; ?>"
+						data-smolblog-content-type="<?php echo $key; ?>"
+					>
+						<?php echo $display; ?>
+					</button>
+				</li>
+			<?php endforeach; ?>
+			</ul>
+			<div class="tab-content" id="myTabContent">
+			<?php foreach (array_keys($types) as $key) : ?>
+				<?php $isActive = ($key === $activeType); ?>
+				<div
+					class="tab-pane fade<?php echo $isActive ? ' show active' : ''; ?>"
+					id="<?php echo $key; ?>-tab-pane" role="tabpanel"
+					aria-labelledby="<?php echo $key; ?>-tab" tabindex="0"
+				>
+					<?php echo $this->builder->fieldsetForClass(
+						class: $this->types->typeClassFor($key),
+						prefix: "body[{$key}]",
+						hideLegend: true,
+					); ?>
+				</div>
+			<?php endforeach; ?>
+			</div>
+
+			<input id="body-active-tab" type="hidden" name="body-active" value="<?php echo $activeType; ?>" />
+			<script>
+				jQuery(document).ready(() => {
+					jQuery('button[data-bs-toggle="tab"]').each((ind, btn) => {
+						btn.addEventListener('shown.bs.tab', (event) => {
+							const newType = jQuery(event.target).data('smolblog-content-type');
+							jQuery('#body-active-tab').val(newType);
+						});
+					});
+				});
+			</script>
 		<?php
 	}
 }
