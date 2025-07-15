@@ -32,10 +32,30 @@ class ContentForm implements AdminPage {
 		print_r($_POST);
 		echo '</code></pre>';
 
-		// $shaped = $builder->shapeInputForClass(class: Content::class, input: $_POST);
-		// echo '<h3>Shaped:</h3><pre><code>';
-		// print_r($shaped);
-		// echo '</code></pre>';
+		
+		$input = $_POST;
+		$activeType = $_POST['body-active'];
+		$input['body'] = $_POST['body'][$activeType];
+		unset($input['body-active']);
+
+		$contentReflection = Content::reflection();
+		$shaperClass = [
+			'publishTimestamp' => $contentReflection['publishTimestamp'],
+			'canonicalUrl' => $contentReflection['canonicalUrl'],
+		];
+		$shaperClass['body'] = $contentReflection['body']->with(type: $this->types->typeClassFor($activeType));
+		$shaped = $this->builder->shapeInputForClass(class: $shaperClass, input: $input);
+
+		$extensionKeys = array_keys($this->extensions->availableContentExtensions());
+		$shaperClass = array_combine(
+			$extensionKeys,
+			array_map(fn($key) => $this->extensions->extensionClassFor($key), $extensionKeys)
+		);
+		$shaped['extensions'] = $this->builder->shapeInputForClass($shaperClass, $_POST['extensions']);
+
+		echo '<h3>Shaped:</h3><pre><code>';
+		print_r($shaped);
+		echo '</code></pre>';
 
 		// echo '<h3>Parsed:</h3><pre><code>';
 		// try {
