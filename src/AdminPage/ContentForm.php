@@ -5,6 +5,7 @@ namespace Smolblog\WP\AdminPage;
 use Smolblog\Core\Content\Entities\Content;
 use Smolblog\Core\Content\Services\ContentExtensionRegistry;
 use Smolblog\Core\Content\Services\ContentTypeRegistry;
+use Smolblog\Foundation\Value\ValueProperty;
 use Smolblog\WP\FormBuilder;
 use Smolblog\WP\WordPressEnvironment;
 
@@ -35,7 +36,9 @@ class ContentForm implements AdminPage {
 		
 		$input = $_POST;
 		$activeType = $_POST['body-active'];
+		// TODO add type property
 		$input['body'] = $_POST['body'][$activeType];
+		$input['body']['type'] = $this->types->typeClassFor($activeType);
 		unset($input['body-active']);
 
 		$contentReflection = Content::reflection();
@@ -46,24 +49,33 @@ class ContentForm implements AdminPage {
 		$shaperClass['body'] = $contentReflection['body']->with(type: $this->types->typeClassFor($activeType));
 		$shaped = $this->builder->shapeInputForClass(class: $shaperClass, input: $input);
 
-		$extensionKeys = array_keys($this->extensions->availableContentExtensions());
+		$extensions = $this->extensions->availableContentExtensions();
+		$extensionKeys = array_keys($extensions);
 		$shaperClass = array_combine(
 			$extensionKeys,
-			array_map(fn($key) => $this->extensions->extensionClassFor($key), $extensionKeys)
+			array_map(fn($key) => new ValueProperty(
+				name: $extensions[$key],
+				type: $this->extensions->extensionClassFor($key),
+			), $extensionKeys)
 		);
+
 		$shaped['extensions'] = $this->builder->shapeInputForClass($shaperClass, $_POST['extensions']);
+		array_walk($shaped['extensions'], fn(&$val, $key) => $val['type'] = $shaperClass[$key]->type);
+
+		$shaped['userId'] = $this->env->getUserId();
+		$shaped['siteId'] = $this->env->getSiteId();
 
 		echo '<h3>Shaped:</h3><pre><code>';
 		print_r($shaped);
 		echo '</code></pre>';
 
-		// echo '<h3>Parsed:</h3><pre><code>';
-		// try {
-		// 	print_r(Content::deserializeValue($shaped));
-		// } catch (Throwable $e) {
-		// 	echo $e->getMessage();
-		// }
-		// echo '</code></pre>';
+		echo '<h3>Parsed:</h3><pre><code>';
+		try {
+			print_r(Content::deserializeValue($shaped));
+		} catch (\Throwable $e) {
+			echo $e->getMessage();
+		}
+		echo '</code></pre>';
 	}
 
 	public function displayPage(): void {
