@@ -2,9 +2,12 @@
 
 namespace Smolblog\WP\AdminPage;
 
+use Smolblog\Core\Content\Commands\CreateContent;
 use Smolblog\Core\Content\Entities\Content;
+use Smolblog\Core\Content\Entities\ContentType;
 use Smolblog\Core\Content\Services\ContentExtensionRegistry;
 use Smolblog\Core\Content\Services\ContentTypeRegistry;
+use Smolblog\Foundation\Service\Command\CommandBus;
 use Smolblog\Foundation\Value\ValueProperty;
 use Smolblog\WP\FormBuilder;
 use Smolblog\WP\WordPressEnvironment;
@@ -24,19 +27,19 @@ class ContentForm implements AdminPage {
 		private ContentTypeRegistry $types,
 		private ContentExtensionRegistry $extensions,
 		private FormBuilder $builder,
+		private CommandBus $cmd,
 	) {}
 
 	// private static array $
 
 	public function handleForm(): void {
-		echo '<h3>Post array:</h3><pre><code>';
-		print_r($_POST);
-		echo '</code></pre>';
+		if (empty($_POST['body-active'])) {
+			// No form data, bail.
+			return;
+		}
 
-		
 		$input = $_POST;
 		$activeType = $_POST['body-active'];
-		// TODO add type property
 		$input['body'] = $_POST['body'][$activeType];
 		$input['body']['type'] = $this->types->typeClassFor($activeType);
 		unset($input['body-active']);
@@ -65,17 +68,19 @@ class ContentForm implements AdminPage {
 		$shaped['userId'] = $this->env->getUserId();
 		$shaped['siteId'] = $this->env->getSiteId();
 
-		echo '<h3>Shaped:</h3><pre><code>';
-		print_r($shaped);
-		echo '</code></pre>';
+		// Create a Content object. This makes sure everything is valid and does
+		// all the deserialization we need to create the Command.
+		$content = Content::deserializeValue($shaped);
 
-		echo '<h3>Parsed:</h3><pre><code>';
-		try {
-			print_r(Content::deserializeValue($shaped));
-		} catch (\Throwable $e) {
-			echo $e->getMessage();
-		}
-		echo '</code></pre>';
+		$this->cmd->execute(
+			new CreateContent(
+				userId: $this->env->getUserId(),
+				body: $content->body,
+				siteId: $this->env->getSiteId(),
+				publishTimestamp: $content->publishTimestamp ?? null,
+				extensions: $content->extensions,
+			)
+		);
 	}
 
 	public function displayPage(): void {
