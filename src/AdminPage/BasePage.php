@@ -4,6 +4,8 @@ namespace Smolblog\WP\AdminPage;
 
 use Formr\Formr;
 use Smolblog;
+use Smolblog\Core\Channel\Entities\Channel;
+use Smolblog\Core\Channel\Services\ChannelDataService;
 use Smolblog\Core\Content\Commands\CreateContent;
 use Smolblog\Core\Content\Entities\Content;
 use Smolblog\Core\Content\Extensions\Tags\Tags;
@@ -32,11 +34,11 @@ class BasePage implements AdminPage {
 	}
 
 	public function __construct(
-		private Formr $form,
 		private WordPressEnvironment $env,
 		private CommandBus $cmd,
 		private ContentDataService $content,
 		private ContentTypeRegistry $types,
+		private ChannelDataService $channels,
 	) {}
 
 	/*
@@ -72,19 +74,18 @@ class BasePage implements AdminPage {
 	}
 
 	public function displayPage(): void {
-		$builder = new FormBuilder();
-		echo '<p>The future of blogging awaits! This ain\'t it, though.</p>';
-
-		echo '<hr>';
 		$content = $this->content->contentList(
 			siteId: $this->env->getSiteId(),
 			userId: $this->env->getUserId(),
 		);
 
 		$contentTypes = $this->types->availableContentTypes();
+		/** @var Channel[] */
+		$channels = $this->channels->channelsForSite(
+			siteId: $this->env->getSiteId(),
+			userId: $this->env->getUserId(),
+		);
 		?>
-
-		<h3>Latest Content</h3>
 
 		<table class="table table-striped table-hover">
 			<thead>
@@ -123,7 +124,15 @@ class BasePage implements AdminPage {
 										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 									</div>
 									<div class="modal-body">
-										Here lies the list of channels for this site.
+										<?php foreach ($channels as $channel) : ?>
+											<?php $channelFormId = "push-{$row->id}-form-channel-{$channel->getId()}"; ?>
+											<div class="form-check">
+												<input class="form-check-input" type="radio" name="channel" id="<?php echo $channelFormId; ?>" value="<?php echo $channel->getId(); ?>">
+												<label class="form-check-label" for="<?php echo $channelFormId; ?>">
+													<?php echo "{$channel->handler}: {$channel->displayName}"; ?>
+												</label>
+											</div>
+										<?php endforeach; ?>
 									</div>
 									<div class="modal-footer">
 										<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

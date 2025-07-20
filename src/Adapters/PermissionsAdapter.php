@@ -4,6 +4,7 @@ namespace Smolblog\WP\Adapters;
 
 use Smolblog\Core\Permissions\GlobalPermissionsService;
 use Smolblog\Core\Permissions\SitePermissionsService;
+use Smolblog\Core\User\InternalSystemUser;
 use Smolblog\Foundation\Value\Fields\Identifier;
 
 /**
@@ -44,6 +45,10 @@ class PermissionsAdapter implements SitePermissionsService, GlobalPermissionsSer
 	 * @return boolean
 	 */
 	public function canManageChannels(Identifier $userId, Identifier $siteId): bool {
+		if (strval($userId) == InternalSystemUser::ID) {
+			return true;
+		}
+
 		$wpId = $this->wordPressUserOrFalse($userId, $siteId);
 		return $wpId !== false && user_can($wpId, 'manage_options');
 	}

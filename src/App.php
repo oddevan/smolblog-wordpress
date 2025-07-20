@@ -3,12 +3,19 @@
 namespace Smolblog\WP;
 
 use Psr\Container\ContainerInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Roots\WPConfig\Config;
+use Smolblog\Core\Channel\Commands\AddChannelToSite;
+use Smolblog\Core\Channel\Data\ChannelRepo;
+use Smolblog\Core\Channel\Entities\Channel;
+use Smolblog\Core\Channel\Events\ChannelSaved;
 use Smolblog\Core\Model as CoreModel;
 use Smolblog\Core\Site\Commands\CreateSite;
 use Smolblog\Core\Site\Entities\Site;
+use Smolblog\Core\User\InternalSystemUser;
 use Smolblog\CoreDataSql\DatabaseEnvironment;
 use Smolblog\CoreDataSql\Model as CoreDataSqlModel;
+use Smolblog\Foundation\Service\Command\CommandBus;
 use Smolblog\Foundation\Service\KeypairGenerator;
 use Smolblog\Foundation\Value\Fields\RandomIdentifier;
 use Smolblog\Infrastructure\AppKit;
@@ -16,6 +23,7 @@ use Smolblog\Infrastructure\Model as InfrastructureModel;
 use Smolblog\Infrastructure\Registries\ServiceRegistry;
 use Smolblog\WP\Adapters\UserAdapter;
 use Smolblog\WP\AdminPage\AdminPageRegistry;
+use Smolblog\WP\Channel\WordPressChannelHandler;
 use Smolblog\WP\Model as WPModel;
 
 final class App {
@@ -63,7 +71,18 @@ final class App {
 			supplements: $this->buildSupplementsForRegistries(array_keys($dependencyMap)),
 		);
 
-		if (!is_multisite() && get_option('smolblog_site_obj') === false) {
+		$wordpressChannelId = WordPressChannelHandler::internalChannel()->getId();
+		if ($this->container->get(ChannelRepo::class)->channelById($wordpressChannelId) == null) {
+			$this->container->get(EventDispatcherInterface::class)->dispatch(
+				new ChannelSaved(
+					channel:  WordPressChannelHandler::internalChannel(),
+					userId: InternalSystemUser::object()->id,
+				)
+			);
+		}
+
+		$thisSite = get_option('smolblog_site_obj');
+		if (!is_multisite() && $thisSite === false) {
 			$siteObj = new Site(
 				id: new RandomIdentifier(),
 				key: 'smolblog',
@@ -73,6 +92,22 @@ final class App {
 			);
 
 			add_option('smolblog_site_obj', $siteObj->toJson());
+			$thisSite = $siteObj;
+		} else {
+			$thisSite = Site::fromJson($thisSite);
+		}
+
+		if (!$this->container->get(ChannelRepo::class)->siteCanUseChannel(
+			siteId: $thisSite->id,
+			channelId: $wordpressChannelId,
+		)) {
+			$this->container->get(CommandBus::class)->execute(
+				new AddChannelToSite(
+					channelId: $wordpressChannelId,
+					siteId: $thisSite->id,
+					userId: InternalSystemUser::object()->id,
+				)
+			);
 		}
 	}
 
