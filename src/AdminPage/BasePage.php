@@ -4,6 +4,7 @@ namespace Smolblog\WP\AdminPage;
 
 use Formr\Formr;
 use Smolblog;
+use Smolblog\Core\Channel\Commands\PushContentToChannel;
 use Smolblog\Core\Channel\Entities\Channel;
 use Smolblog\Core\Channel\Services\ChannelDataService;
 use Smolblog\Core\Content\Commands\CreateContent;
@@ -17,6 +18,9 @@ use Smolblog\Core\Content\Services\ContentTypeRegistry;
 use Smolblog\Core\Content\Types\Note\Note;
 use Smolblog\Core\Content\Types\Picture\Picture;
 use Smolblog\Core\Content\Types\Reblog\Reblog;
+use Smolblog\Foundation\Exceptions\CommandNotAuthorized;
+use Smolblog\Foundation\Exceptions\EntityNotFound;
+use Smolblog\Foundation\Exceptions\InvalidValueProperties;
 use Smolblog\Foundation\Service\Command\CommandBus;
 use Smolblog\WP\FormBuilder;
 use Smolblog\WP\WordPressEnvironment;
@@ -41,36 +45,18 @@ class BasePage implements AdminPage {
 		private ChannelDataService $channels,
 	) {}
 
-	/*
 	public function handleForm(): void {
-		// get our form values and assign them to a variable
-    $data = $this->form->fastpost([
-			'body_text' => ['Note','required|max[300]'],
-			'extensions_tags_tags' => ['Tags'],
+		if (empty($_POST['channelId'])) {
+			// No form data, bail.
+			return;
+		}
+		
+		$command = PushContentToChannel::deserializeValue([
+			'userId' => $this->env->getUserId(),
+			...$_POST,
 		]);
 
-		$this->formData = [
-			'userId' => $this->env->getUserId()->toString(),
-			'body' => ['text' => $data['body_text'], 'type' => Note::class],
-			'siteId' => $this->env->getSiteId()->toString(),
-			'extensions' => ['tags' => [
-					'type' => Tags::class,
-					'tags' => array_map(fn($str) => trim($str), explode(',', $data['extensions_tags_tags']))
-				]
-			],
-		];
-
-		$command = CreateContent::deserializeValue($this->formData);
 		$this->cmd->execute($command);
-
-    // show a success message if no errors
-    if($this->form->ok()) {
-        $this->form->success_message = "Validation passed.";
-    }
-	}
-		*/
-	public function handleForm(): void {
-		
 	}
 
 	public function displayPage(): void {
@@ -80,7 +66,6 @@ class BasePage implements AdminPage {
 		);
 
 		$contentTypes = $this->types->availableContentTypes();
-		/** @var Channel[] */
 		$channels = $this->channels->channelsForSite(
 			siteId: $this->env->getSiteId(),
 			userId: $this->env->getUserId(),
@@ -117,6 +102,7 @@ class BasePage implements AdminPage {
 						>
 							<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
 								<div class="modal-content">
+									<form method="post" action="<?php echo admin_url('admin.php?page=' . static::getConfiguration()->key) ?>">
 									<div class="modal-header">
 										<h1 class="modal-title fs-5" id="push-<?php echo $row->id;?>-label">
 											Push "<?php echo $row->title(); ?>"
@@ -124,10 +110,11 @@ class BasePage implements AdminPage {
 										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 									</div>
 									<div class="modal-body">
+										<input type="hidden" name="contentId" value="<?php echo $row->id; ?>">
 										<?php foreach ($channels as $channel) : ?>
 											<?php $channelFormId = "push-{$row->id}-form-channel-{$channel->getId()}"; ?>
 											<div class="form-check">
-												<input class="form-check-input" type="radio" name="channel" id="<?php echo $channelFormId; ?>" value="<?php echo $channel->getId(); ?>">
+												<input class="form-check-input" type="radio" name="channelId" id="<?php echo $channelFormId; ?>" value="<?php echo $channel->getId(); ?>">
 												<label class="form-check-label" for="<?php echo $channelFormId; ?>">
 													<?php echo "{$channel->handler}: {$channel->displayName}"; ?>
 												</label>
@@ -136,8 +123,9 @@ class BasePage implements AdminPage {
 									</div>
 									<div class="modal-footer">
 										<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-										<button type="button" class="btn btn-primary">Push</button>
+										<button type="submit" class="btn btn-primary">Push</button>
 									</div>
+									</form>
 								</div>
 							</div>
 						</div>

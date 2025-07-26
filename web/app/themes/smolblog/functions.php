@@ -25,3 +25,5 @@ function smolblog_enqueue_admin_styles() {
 	);
 }
 add_action( 'admin_enqueue_scripts', 'smolblog_enqueue_admin_styles' );
+
+include_once 'site-plugin.php';

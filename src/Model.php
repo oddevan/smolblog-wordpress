@@ -6,6 +6,7 @@ use Formr\Formr;
 use Smolblog\Core;
 use Smolblog\Core\Permissions\{GlobalPermissionsService, SitePermissionsService};
 use Smolblog\Foundation\DomainModel;
+use Smolblog\Markdown\SmolblogMarkdown;
 use Smolblog\WP\FormCustomizations\Wrapper;
 
 class Model extends DomainModel {
@@ -17,6 +18,7 @@ class Model extends DomainModel {
 		Adapters\PermissionsAdapter::class,
 		Adapters\SiteAdapter::class,
 		Adapters\UserAdapter::class,
+		Channel\WordPressChannelHandler::class,
 		WordPressEnvironment::class,
 		FormBuilder::class,
 	];
@@ -26,6 +28,7 @@ class Model extends DomainModel {
 		Core\Site\Data\SiteRepo::class => Adapters\SiteAdapter::class,
 		SitePermissionsService::class => Adapters\PermissionsAdapter::class,
 		GlobalPermissionsService::class => Adapters\PermissionsAdapter::class,
+		SmolblogMarkdown::class => [],
 	];
 
 	public static function getDependencyMap(): array {

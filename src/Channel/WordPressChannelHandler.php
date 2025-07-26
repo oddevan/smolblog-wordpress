@@ -110,7 +110,7 @@ class WordPressChannelHandler implements ChannelHandler, EventListenerService {
 		$wpId = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = 'smolblog_content_id' AND meta_value = %s",
-				$event->entityId,
+				$event->entityId?->toString(),
 			)
 		);
 		$content = $event->content;
@@ -128,7 +128,7 @@ class WordPressChannelHandler implements ChannelHandler, EventListenerService {
 			'post_content' => $this->contentToHtml($content),
 			'post_title' => $content->title(),
 			'post_status' => 'publish',
-			'post_type' => $content->type(),
+			'post_type' => 'sb-' . $content->type(),
 			'tags_input' => $tags,
 			'meta_input' => ['smolblog_content_id' => $content->id->toString()]
 		]);
