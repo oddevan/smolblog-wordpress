@@ -3,11 +3,15 @@
 namespace Smolblog\WP\Channel;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
+use Smolblog\Core\Channel\Data\ChannelRepo;
 use Smolblog\Core\Channel\Entities\BasicChannel;
 use Smolblog\Core\Channel\Entities\Channel;
 use Smolblog\Core\Channel\Entities\ChannelHandlerConfiguration;
+use Smolblog\Core\Channel\Entities\ContentChannelEntry;
 use Smolblog\Core\Channel\Events\ContentPushedToChannel;
 use Smolblog\Core\Channel\Services\ChannelHandler;
+use Smolblog\Core\Channel\Services\ContentPushException;
+use Smolblog\Core\Channel\Services\ProjectionChannelHandler;
 use Smolblog\Core\Content\Data\ContentRepo;
 use Smolblog\Core\Content\Entities\Content;
 use Smolblog\Core\Content\Events\ContentCanonicalUrlSet;
@@ -27,7 +31,7 @@ use Smolblog\Foundation\Value\Fields\Url;
 use Smolblog\Markdown\SmolblogMarkdown;
 use Smolblog\WP\Adapters\UserAdapter;
 
-class WordPressChannelHandler implements ChannelHandler, EventListenerService {
+class WordPressChannelHandler extends ProjectionChannelHandler {
 	public static function getConfiguration(): ChannelHandlerConfiguration
 	{
 		return new ChannelHandlerConfiguration(
@@ -48,72 +52,50 @@ class WordPressChannelHandler implements ChannelHandler, EventListenerService {
 		return self::$internal;
 	}
 
+	protected const PUSH_EVENT = ContentPushedToWordPress::class;
+
 	public function __construct(
-		private EventDispatcherInterface $events,
+		EventDispatcherInterface $eventBus,
+		ChannelRepo $channels,
 		private ContentRepo $repo,
 		private UserAdapter $users,
 		private SmolblogMarkdown $md
 	)	{
-		
+		parent::__construct(eventBus: $eventBus, channels: $channels);
 	}
 
-	public function pushContentToChannel(Content $content, Channel $channel, Identifier $userId): void
-	{
-		if ($channel->handlerKey !== 'internal') {
-			throw new CodePathNotSupported('Uh, WTF dude?', location: __CLASS__);
-		}
-
-		$slug = sanitize_title($content->title());
-		$url = new Url(get_home_url(
-			null, //blog_id, will need to modify for multisite. Use $content->siteId.
-			"/{$content->type()}/{$slug}/",
-		));
-
-		$contentToPush = $content;
-		$processId = null;
-		// If no canonical URL set, create it. Eventually Core should handle this in a more canonical way.
-		if (!isset($content->canonicalUrl)) {
-			$processId = new RandomIdentifier();
-
-			$this->events->dispatch(
-				new ContentCanonicalUrlSet(
-					url: $url,
-					aggregateId: $content->siteId,
-					userId: $userId,
-					entityId: $content->id,
-					processId: $processId,
-				)
-			);
-
-			// Get the updated Content object.
-			$contentToPush = $this->repo->contentById($content->id) ?? $content->with(canonicalUrl: $url);
-		}
-
-
-		// Fire the push event.
-		$this->events->dispatch(
-			new ContentPushedToWordPress(
-				content: $contentToPush,
-				channelId: $channel->getId(),
-				userId: $userId,
-				aggregateId: $contentToPush->siteId,
-				url: $url,
-				processId: $processId,
-			)
-		);
-	}
-
-	#[ProjectionListener]
-	public function onContentPushedToWordPress(ContentPushedToWordPress $event) {
+	/**
+	 * Push the given content to the given channel.
+	 *
+	 * @throws ContentPushException On failure.
+	 *
+	 * @param Content    $content   Content object to push.
+	 * @param Channel    $channel   Channel to push object to.
+	 * @param Identifier $userId    ID of the user who initiated the push.
+	 * @param Identifier $processId ID of this particular push or regeneration process.
+	 * @return ContentChannelEntry Information about the successfully completed push.
+	 */
+	protected function project(
+		Content $content,
+		Channel $channel,
+		Identifier $userId,
+		?Identifier $processId
+	): ContentChannelEntry {
 		global $wpdb;
+
+		if ($channel->getId() != self::internalChannel()->getId()) {
+			throw new ContentPushException(
+				message: 'There should only be one internal WordPress channel, and this ain\'t it.',
+				details: ['givenChannel' => $channel->serializeValue()],
+			);
+		}
 
 		$wpId = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = 'smolblog_content_id' AND meta_value = %s",
-				$event->entityId?->toString(),
+				$content->id->toString(),
 			)
 		);
-		$content = $event->content;
 
 		$tags = [];
 		if (isset($content->extensions['tags'])) {
@@ -122,7 +104,7 @@ class WordPressChannelHandler implements ChannelHandler, EventListenerService {
 			$tags = $tagObj->tags;
 		}
 
-		wp_insert_post([
+		$wpId = wp_insert_post([
 			'id' => $wpId ?? 0,
 			'post_author' => $this->users->wordPressIdFromUserId($content->userId),
 			'post_content' => $this->contentToHtml($content),
@@ -132,6 +114,13 @@ class WordPressChannelHandler implements ChannelHandler, EventListenerService {
 			'tags_input' => $tags,
 			'meta_input' => ['smolblog_content_id' => $content->id->toString()]
 		]);
+
+		return new ContentChannelEntry(
+			contentId: $content->id,
+			channelId: $channel->getId(),
+			url: new Url(get_permalink($wpId)),
+			details: ['id' => $wpId],
+		);
 	}
 
 	private function contentToHtml(Content $content): string {
